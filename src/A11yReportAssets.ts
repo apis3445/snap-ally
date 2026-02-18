@@ -14,7 +14,7 @@ export class A11yReportAssets {
         if (!srcPath || !fs.existsSync(srcPath)) {
             return '';
         }
-        
+
         const name = fileName || path.basename(srcPath);
         const destFile = path.join(destFolder, name);
 
@@ -32,23 +32,32 @@ export class A11yReportAssets {
      */
     async copyTestVideo(result: TestResult, destFolder: string): Promise<string> {
         const videoAttachments = result.attachments.filter(a => a.name === 'video');
-        
+
         let bestVideo: string | null = null;
         let maxSize = -1;
 
         for (const attachment of videoAttachments) {
             if (!attachment.path) continue;
 
-            // Retry logic: Wait for file to exist (up to 2 seconds)
-            let exists = fs.existsSync(attachment.path);
+            // Retry logic: Wait for file to exist and have non-zero size (up to 2 seconds)
             let attempts = 0;
-            while (!exists && attempts < 10) {
+            let isReady = false;
+            while (attempts < 10) {
+                if (fs.existsSync(attachment.path)) {
+                    try {
+                        if (fs.statSync(attachment.path).size > 0) {
+                            isReady = true;
+                            break;
+                        }
+                    } catch (e) {
+                        // statSync might fail if file is temporarily locked
+                    }
+                }
                 await new Promise(r => setTimeout(r, 200));
-                exists = fs.existsSync(attachment.path);
                 attempts++;
             }
 
-            if (exists) {
+            if (isReady) {
                 try {
                     const size = fs.statSync(attachment.path).size;
                     if (size > maxSize) {
@@ -59,16 +68,16 @@ export class A11yReportAssets {
                     console.error(`[SnapAlly] Error checking video stats: ${err}`);
                 }
             } else {
-                console.warn(`[SnapAlly] Video attachment path found but file missing: ${attachment.path}`);
+                console.warn(`[SnapAlly] Video attachment found but file is missing or empty: ${attachment.path}`);
             }
         }
-        
+
         if (bestVideo) {
             try {
                 return this.copyToFolder(destFolder, bestVideo);
             } catch (e) {
                 console.error(`[SnapAlly] Failed to copy video: ${e}`);
-                return path.basename(bestVideo); 
+                return path.basename(bestVideo);
             }
         }
         return '';

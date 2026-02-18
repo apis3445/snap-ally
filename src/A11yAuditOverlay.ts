@@ -13,7 +13,7 @@ export class A11yAuditOverlay {
     private readonly overlayRootId = 'a11y-audit-overlay-root';
     private auditAnnotations: AuditAnnotation[] = [];
 
-    constructor(protected page: Page, protected keyPage: string) {}
+    constructor(protected page: Page, protected keyPage: string) { }
 
     public reset() {
         this.auditAnnotations = [];
@@ -36,7 +36,7 @@ export class A11yAuditOverlay {
 
                 const shadow = root.shadowRoot!;
                 let container = shadow.getElementById('a11y-banner');
-                
+
                 if (!container) {
                     const style = document.createElement('style');
                     style.textContent = `
@@ -85,10 +85,10 @@ export class A11yAuditOverlay {
                     shadow.appendChild(container);
                 }
 
-                const alphaColor = color.includes('rgba') ? color : 
+                const alphaColor = color.includes('rgba') ? color :
                     (color.includes('rgb') ? color.replace('rgb', 'rgba').replace(')', ', 0.85)') : color + 'E6');
                 container.style.backgroundColor = alphaColor;
-                
+
                 container.innerHTML = `
                     <div style="font-size: 20px;">⚠️</div>
                     <div class="content">
@@ -99,7 +99,7 @@ export class A11yAuditOverlay {
                     </div>
                 `;
             },
-            [violation, color, this.overlayRootId] as [{id: string, help: string, selector: string}, string, string]
+            [violation, color, this.overlayRootId] as [{ id: string, help: string }, string, string]
         );
     }
 

@@ -115,14 +115,14 @@ class SnapAllyReporter implements Reporter {
         console.log(`[SnapAlly Debug] Test "${test.title}" ended. Status: ${result.status}. Video: ${video ? 'Created' : 'Missing'}`);
         console.log(`[SnapAlly Debug] Raw Attachments: ${result.attachments.map(a => `${a.name} (${a.path ? 'file' : 'body'})`).join(', ')}`);
 
-        const errorLogs = result.errors.map(err => {
+        const errorLogs = (result.errors || []).map(err => {
             const fullMsg = err.stack ? `${err.message}\n${err.stack}` : (err.message || 'Error occurred');
             return this.renderer.ansiToHtml(fullMsg);
         }) || [];
 
         // --- 2. Accessibility Reporting (Iterate over all A11y sources: attachments and annotations) ---
-        const a11yAttachments = result.attachments.filter(a => a.name === 'A11y');
-        const a11yAnnotations = test.annotations.filter(a => a.type === 'A11y');
+        const a11yAttachments = (result.attachments || []).filter(a => a.name === 'A11y');
+        const a11yAnnotations = (test.annotations || []).filter(a => a.type === 'A11y');
 
         const a11yDataSources = [
             ...a11yAttachments.map((a: any) => ({ type: 'attachment', data: a })),

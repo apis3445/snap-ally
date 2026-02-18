@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,12 @@
   <!-- Modern Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
+    rel="stylesheet">
   <!-- Bootstrap for functional components only (modals/accordions), custom CSS for styling -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <style>
     :root {
       --bg-color: #f8fafc;
@@ -19,12 +22,12 @@
       --primary-soft: #eef2ff;
       --text-main: #0f172a;
       --text-muted: #64748b;
-      
-      --critical: <%= data.criticalColor || '#dc2626' %>;
-      --serious: <%= data.seriousColor || '#ea580c' %>;
-      --moderate: <%= data.moderateColor || '#f59e0b' %>;
-      --minor: <%= data.minorColor || '#0ea5e9' %>;
-      
+
+      --critical: <%=data.criticalColor || '#dc2626' %>;
+      --serious: <%=data.seriousColor || '#ea580c' %>;
+      --moderate: <%=data.moderateColor || '#f59e0b' %>;
+      --minor: <%=data.minorColor || '#0ea5e9' %>;
+
       --glass-bg: rgba(255, 255, 255, 0.85);
       --glass-border: rgba(255, 255, 255, 0.6);
       --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
@@ -45,7 +48,9 @@
     /* Fixed Header */
     header {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 1000;
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(20px) saturate(180%);
@@ -118,7 +123,10 @@
       font-size: 0.8rem;
     }
 
-    .verified-icon { font-size: 18px; color: var(--primary); }
+    .verified-icon {
+      font-size: 18px;
+      color: var(--primary);
+    }
 
     /* Container Overrides */
     .container {
@@ -176,8 +184,15 @@
       font-size: 0.9rem;
     }
 
-    .stat-pill-passed { background: #ecfdf5; border-color: #d1fae5; color: #047857; }
-    .stat-pill-icon { color: var(--primary); }
+    .stat-pill-passed {
+      background: #ecfdf5;
+      border-color: #d1fae5;
+      color: #047857;
+    }
+
+    .stat-pill-icon {
+      color: var(--primary);
+    }
 
     /* Violation Cards */
     .violation-card {
@@ -203,10 +218,15 @@
       align-items: center;
       gap: 20px;
       background: rgba(255, 255, 255, 0.5);
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    .title-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .title-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
 
     .violation-title {
       font-family: 'Outfit', sans-serif;
@@ -226,8 +246,14 @@
       gap: 8px;
     }
 
-    .rule-name { font-weight: 700; color: var(--text-main); }
-    .rule-sep { opacity: 0.5; }
+    .rule-name {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .rule-sep {
+      opacity: 0.5;
+    }
 
     .severity-badge {
       padding: 6px 16px;
@@ -239,12 +265,25 @@
       white-space: nowrap;
     }
 
-    .severity-badge.critical { background: var(--critical); }
-    .severity-badge.serious { background: var(--serious); }
-    .severity-badge.moderate { background: var(--moderate); }
-    .severity-badge.minor { background: var(--minor); }
+    .severity-badge.critical {
+      background: var(--critical);
+    }
 
-    .violation-body { padding: 16px 20px; }
+    .severity-badge.serious {
+      background: var(--serious);
+    }
+
+    .severity-badge.moderate {
+      background: var(--moderate);
+    }
+
+    .severity-badge.minor {
+      background: var(--minor);
+    }
+
+    .violation-body {
+      padding: 16px 20px;
+    }
 
     .fix-suggestion {
       background: #f0fdf4;
@@ -259,14 +298,44 @@
       align-items: flex-start;
     }
 
-    .fix-icon { color: #059669; font-size: 20px; }
-    .fix-title { font-weight: 700; margin-bottom: 4px; }
-    .fix-link { margin-left: 8px; color: #059669; font-weight: 600; text-decoration: none; border-bottom: 1.5px solid rgba(5,150,105,0.3); }
-    .fix-link-icon { font-size: 14px; vertical-align: middle; }
+    .fix-icon {
+      color: #059669;
+      font-size: 20px;
+    }
+
+    .fix-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .fix-link {
+      margin-left: 8px;
+      color: #059669;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1.5px solid rgba(5, 150, 105, 0.3);
+    }
+
+    .fix-link-icon {
+      font-size: 14px;
+      vertical-align: middle;
+    }
 
     /* Instances */
-    .instances-title { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    .instances-icon { font-size: 18px; color: var(--primary); }
+    .instances-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .instances-icon {
+      font-size: 18px;
+      color: var(--primary);
+    }
 
     /* Bug Preview Card Styling */
     .bug-preview-card {
@@ -275,7 +344,7 @@
       border-radius: 12px;
       overflow: hidden;
       margin-bottom: 16px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
       transition: all 0.2s ease;
     }
 
@@ -311,7 +380,9 @@
     }
 
     @media (max-width: 768px) {
-      .bug-body { grid-template-columns: 1fr; }
+      .bug-body {
+        grid-template-columns: 1fr;
+      }
     }
 
     .bug-section-title {
@@ -360,57 +431,166 @@
       color: #ef4444;
     }
 
-    .video-title { font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; margin: 0; }
+    .video-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0;
+    }
 
     .video-container {
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
       background: #000;
       border: 1px solid #000;
     }
 
-    .video-container video { width: 100%; height: 100%; }
+    .video-container video {
+      width: 100%;
+      height: 100%;
+    }
 
     #loader-overlay {
-      position: fixed; inset: 0; background: #fff; z-index: 10000;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       transition: opacity 0.5s ease;
     }
-    
+
     .loader-pulse {
-      width: 64px; height: 64px; background: var(--primary); border-radius: 16px;
+      width: 64px;
+      height: 64px;
+      background: var(--primary);
+      border-radius: 16px;
       animation: pulse 1.5s infinite ease-in-out;
-      display: flex; align-items: center; justify-content: center; color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
     }
 
-    .loader-text { font-family: 'Outfit'; font-weight: 700; font-size: 1.2rem; color: var(--text-main); margin-top: 24px; }
+    .loader-text {
+      font-family: 'Outfit';
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text-main);
+      margin-top: 24px;
+    }
 
     @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5); }
-      70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 20px rgba(99, 102, 241, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+      }
     }
 
     /* Success Hero */
-    .success-verified-card { text-align: center; padding: 80px 0; background: white; border-radius: 32px; border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); }
-    .success-hero-icon { font-size: 80px; color: #10b981; margin-bottom: 24px; filter: drop-shadow(0 4px 12px rgba(16,185,129,0.2)); }
-    .success-hero-title { font-weight: 700; font-size: 1.8rem; font-family: 'Outfit', sans-serif; }
-    .success-hero-desc { max-width: 400px; margin: 0 auto; color: var(--text-muted); }
+    .success-verified-card {
+      text-align: center;
+      padding: 80px 0;
+      background: white;
+      border-radius: 32px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .success-hero-icon {
+      font-size: 80px;
+      color: #10b981;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.2));
+    }
+
+    .success-hero-title {
+      font-weight: 700;
+      font-size: 1.8rem;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .success-hero-desc {
+      max-width: 400px;
+      margin: 0 auto;
+      color: var(--text-muted);
+    }
 
     /* Modal Styling */
-    .modal-content { border-radius: 28px; border: none; }
-    .modal-header-custom { border-bottom: none; padding: 32px 32px 16px; }
-    .modal-title-custom { font-weight: 700; font-size: 1.5rem; font-family: 'Outfit', sans-serif; }
-    .modal-body-custom { padding: 0 32px 24px; }
-    .modal-desc { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 24px; }
-    .modal-footer-custom { border-top: none; padding: 0 32px 32px; }
+    .modal-content {
+      border-radius: 28px;
+      border: none;
+    }
 
-    .form-control:focus { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); border-color: var(--primary); }
-    .token-input-wrap { position: relative; }
-    .token-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 20px; }
-    .token-input { border-radius: 12px; padding: 14px 14px 14px 44px; background: #f8fafc; }
-    .btn-init { border-radius: 14px; font-weight: 700; padding: 16px; background: var(--primary); }
+    .modal-header-custom {
+      border-bottom: none;
+      padding: 32px 32px 16px;
+    }
+
+    .modal-title-custom {
+      font-weight: 700;
+      font-size: 1.5rem;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .modal-body-custom {
+      padding: 0 32px 24px;
+    }
+
+    .modal-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .modal-footer-custom {
+      border-top: none;
+      padding: 0 32px 32px;
+    }
+
+    .form-control:focus {
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      border-color: var(--primary);
+    }
+
+    .token-input-wrap {
+      position: relative;
+    }
+
+    .token-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 20px;
+    }
+
+    .token-input {
+      border-radius: 12px;
+      padding: 14px 14px 14px 44px;
+      background: #f8fafc;
+    }
+
+    .btn-init {
+      border-radius: 14px;
+      font-weight: 700;
+      padding: 16px;
+      background: var(--primary);
+    }
 
     /* Premium Buttons */
     .btn-premium {
@@ -433,13 +613,37 @@
       box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
     }
 
-    .btn-bug:hover { transform: translateY(-1px); box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3); color: #fff; }
+    .btn-bug:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3);
+      color: #fff;
+    }
 
-    .btn-back { text-decoration: none; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
-    .btn-back-icon { font-size: 20px; }
-    .btn-token { border-radius: 10px; font-weight: 700; padding: 8px 16px; }
-    .btn-token-icon { vertical-align: middle; font-size: 18px; margin-right: 4px; }
-    
+    .btn-back {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-back-icon {
+      font-size: 20px;
+    }
+
+    .btn-token {
+      border-radius: 10px;
+      font-weight: 700;
+      padding: 8px 16px;
+    }
+
+    .btn-token-icon {
+      vertical-align: middle;
+      font-size: 18px;
+      margin-right: 4px;
+    }
+
     .screenshot-container {
       margin-top: 0;
       border-radius: 8px;
@@ -449,7 +653,11 @@
       position: relative;
     }
 
-    .screenshot-container img { width: 100%; height: auto; display: block; }
+    .screenshot-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
 
     /* ADO Modal Premium Standardized */
     .ado-modal-premium .modal-content {
@@ -466,26 +674,42 @@
       padding: 24px 32px;
       border-bottom: 1px solid var(--glass-border);
     }
-    
-    .ado-modal-premium .modal-title { 
-      font-family: 'Outfit', sans-serif; 
-      font-weight: 700; 
-      font-size: 1.25rem; 
-      color: var(--text-main); 
+
+    .ado-modal-premium .modal-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .ado-modal-premium .modal-body { 
-      padding: 24px 32px; 
-      max-height: 550px; 
+    .ado-modal-premium .modal-body {
+      padding: 24px 32px;
+      max-height: 550px;
       overflow-y: auto;
     }
-    .ado-modal-premium .modal-footer { padding: 12px 32px; background: #f8fafc; border-top: 1px solid var(--glass-border); }
 
-    .ado-field-group { margin-bottom: 20px; }
-    .ado-form-label { display: block; font-weight: 700; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ado-modal-premium .modal-footer {
+      padding: 12px 32px;
+      background: #f8fafc;
+      border-top: 1px solid var(--glass-border);
+    }
+
+    .ado-field-group {
+      margin-bottom: 20px;
+    }
+
+    .ado-form-label {
+      display: block;
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
     .ado-form-input {
       display: block;
@@ -500,7 +724,7 @@
       border: 1.5px solid #e2e8f0;
       appearance: none;
       border-radius: 12px;
-      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+      transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     }
 
     .ado-form-input:focus {
@@ -520,14 +744,14 @@
       line-height: 1.6;
       color: var(--text-main);
     }
-    
+
     .visual-evidence-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
       margin-top: 12px;
     }
-    
+
     .visual-item {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -545,7 +769,7 @@
       align-items: center;
       gap: 4px;
     }
-    
+
     .screenshot-thumb {
       width: 100%;
       height: auto;
@@ -567,18 +791,45 @@
       object-fit: contain;
     }
 
-    .ado-repro-preview b { color: var(--primary-dark); }
-    .ado-repro-preview hr { margin: 16px 0; opacity: 0.1; }
+    .ado-repro-preview b {
+      color: var(--primary-dark);
+    }
+
+    .ado-repro-preview hr {
+      margin: 16px 0;
+      opacity: 0.1;
+    }
 
     .btn-ado-primary {
-      background: var(--primary); color: #fff; border: none; padding: 12px 28px; border-radius: 12px; font-weight: 700; transition: all 0.2s;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      transition: all 0.2s;
     }
-    .btn-ado-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); }
-    
+
+    .btn-ado-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
     .btn-ado-secondary {
-      background: #fff; color: var(--text-main); border: 1.5px solid #e2e8f0; padding: 12px 28px; border-radius: 12px; font-weight: 700; transition: all 0.2s;
+      background: #fff;
+      color: var(--text-main);
+      border: 1.5px solid #e2e8f0;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      transition: all 0.2s;
     }
-    .btn-ado-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+    .btn-ado-secondary:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
 
     /* Custom select arrow for ado-form-input */
     select.ado-form-input {
@@ -588,7 +839,10 @@
       background-size: 16px 12px;
     }
 
-    .modal-xl { max-width: 1000px !important; width: 95% !important; }
+    .modal-xl {
+      max-width: 1000px !important;
+      width: 95% !important;
+    }
 
     /* Restoration of Bug List UI */
     .bug-list-item {
@@ -597,7 +851,7 @@
       margin-bottom: 12px;
       overflow: hidden;
       background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
     .bug-item-header {
@@ -610,7 +864,9 @@
       transition: background 0.2s;
     }
 
-    .bug-item-header:hover { background: #f8fafc; }
+    .bug-item-header:hover {
+      background: #f8fafc;
+    }
 
     .bug-item-header .chevron {
       transition: transform 0.3s;
@@ -678,7 +934,8 @@
         <span class="material-symbols-outlined btn-back-icon">arrow_back</span>
         Back to Summary
       </a>
-      <button type="button" class="btn btn-outline-primary btn-sm btn-token" data-bs-toggle="modal" data-bs-target="#tokenModal">
+      <button type="button" class="btn btn-outline-primary btn-sm btn-token" data-bs-toggle="modal"
+        data-bs-target="#tokenModal">
         <span class="material-symbols-outlined btn-token-icon">key</span>
         ADO Token
       </button>
@@ -689,19 +946,23 @@
     <section class="page-hero">
       <div class="hero-content">
         <h2>Target Resource</h2>
-        <p class="page-url"><%= data.pageKey %></p>
+        <p class="page-url">
+          <%= data.pageKey %>
+        </p>
       </div>
       <div class="stats-pills">
-        <% if (!data.errors || data.errors.length === 0) { %>
+        <% if (!data.errors || data.errors.length===0) { %>
           <div class="stat-pill stat-pill-passed">
             <span class="material-symbols-outlined text-success">check_circle</span>
             <span>Passed</span>
           </div>
-        <% } %>
-        <div class="stat-pill">
-          <span class="material-symbols-outlined stat-pill-icon">bug_report</span>
-          <span><%= (data.errors ? data.errors.reduce((acc, err) => acc + err.total, 0) : 0) %> Issues</span>
-        </div>
+          <% } %>
+            <div class="stat-pill">
+              <span class="material-symbols-outlined stat-pill-icon">bug_report</span>
+              <span>
+                <%= (data.errors ? data.errors.reduce((acc, err)=> acc + err.total, 0) : 0) %> Issues
+              </span>
+            </div>
       </div>
     </section>
 
@@ -715,11 +976,13 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body modal-body-custom">
-              <p class="modal-desc">Securely provide your Personal Access Token (PAT) to enable automated bug reporting.</p>
+              <p class="modal-desc">Securely provide your Personal Access Token (PAT) to enable automated bug reporting.
+              </p>
               <div class="mb-3">
                 <div class="token-input-wrap">
                   <span class="material-symbols-outlined token-icon">lock</span>
-                  <input type="password" class="form-control token-input" id="tokenInput" placeholder="Enter PAT Token" required>
+                  <input type="password" class="form-control token-input" id="tokenInput" placeholder="Enter PAT Token"
+                    required>
                 </div>
               </div>
             </div>
@@ -737,25 +1000,33 @@
           <div class="violation-card">
             <div class="violation-header">
               <div class="title-meta">
-                <span class="violation-title"><%= error.id %></span>
+                <span class="violation-title">
+                  <%= error.id %>
+                </span>
                 <span class="violation-rule-info">
-                  <span class="rule-name"><%= error.wcagRule %></span>
+                  <span class="rule-name">
+                    <%= error.wcagRule %>
+                  </span>
                   <span class="rule-sep">•</span>
-                  <span><%= error.description %></span>
+                  <span>
+                    <%= error.description %>
+                  </span>
                 </span>
               </div>
               <span class="severity-badge <%= error.severity %>">
-                <%= error.total %> <%= error.severity %>
+                <%= error.total %>
+                  <%= error.severity %>
               </span>
             </div>
-            
+
             <div class="violation-body">
               <div class="fix-suggestion">
                 <span class="material-symbols-outlined fix-icon">lightbulb</span>
                 <div>
                   <div class="fix-title">Recommended Action</div>
                   <%= error.help %>
-                  <a href="<%= error.helpUrl %>" target="_blank" class="fix-link">Technical Docs <span class="material-symbols-outlined fix-link-icon">open_in_new</span></a>
+                    <a href="<%= error.helpUrl %>" target="_blank" class="fix-link">Technical Docs <span
+                        class="material-symbols-outlined fix-link-icon">open_in_new</span></a>
                 </div>
               </div>
 
@@ -765,66 +1036,69 @@
                     <span class="material-symbols-outlined instances-icon">preview</span>
                     Bug Candidates (<%= error.target.length %>)
                   </h4>
-                  
+
                   <% error.target.forEach(function(target, index) { %>
                     <div class="bug-list-item">
-                      <div class="bug-item-header collapsed" data-bs-toggle="collapse" data-bs-target="#details-<%= errorIndex %>-<%= index %>" aria-expanded="false">
-                         <div class="d-flex align-items-center gap-3" style="max-width: 75%;">
-                            <span class="material-symbols-outlined chevron">expand_more</span>
-                            <div class="bug-snippet" title="<%= error.help %>: <%= target.snippet || target.element %>">
-                               <strong style="color: var(--primary);"><%= error.help %></strong>: <%= target.snippet || target.element %>
-                            </div>
-                         </div>
-                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-bug log-bug-btn" type="button" 
-                               onclick="handleLogBugClick(this, event)"
-                               data-title="<%= error.help %> (<%= target.snippet || target.element %>)"
-                               data-axe-id="<%= error.id %>"
-                               data-help="<%= error.help %>"
-                               data-severity="<%= error.severity %>"
-                               data-steps="<%= target.stepsJson || '[]' %>"
-                               data-screenshot="<%= target.screenshotBase64 %>"
-                               data-wcag="<%= error.wcagRule %>">
-                               <span class="material-symbols-outlined" style="font-size: 16px;">bug_report</span>
-                               Log Bug
-                            </button>
-                         </div>
+                      <div class="bug-item-header collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#details-<%= errorIndex %>-<%= index %>" aria-expanded="false">
+                        <div class="d-flex align-items-center gap-3" style="max-width: 75%;">
+                          <span class="material-symbols-outlined chevron">expand_more</span>
+                          <div class="bug-snippet" title="<%= error.help %>: <%= target.snippet || target.element %>">
+                            <strong style="color: var(--primary);">
+                              <%= error.help %>
+                            </strong>: <%= target.snippet || target.element %>
+                          </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                          <button class="btn btn-sm btn-bug log-bug-btn" type="button"
+                            onclick="handleLogBugClick(this, event)"
+                            data-title="<%= error.help %> (<%= target.snippet || target.element %>)"
+                            data-axe-id="<%= error.id %>" data-help="<%= error.help %>"
+                            data-severity="<%= error.severity %>" data-steps="<%= target.stepsJson || '[]' %>"
+                            data-screenshot="<%= target.screenshotBase64 %>" data-wcag="<%= error.wcagRule %>">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">bug_report</span>
+                            Log Bug
+                          </button>
+                        </div>
                       </div>
- 
+
                       <div id="details-<%= errorIndex %>-<%= index %>" class="collapse">
-                         <div class="bug-details-body">
-                            <!-- Left: Repro Steps -->
-                             <div style="margin-bottom: 16px;">
-                                <div class="bug-section-title">Reproduction Steps</div>
-                                <div class="bug-content-box">
-                                    <% if(target.steps && target.steps.length) { %>
-                                        <ol style="margin: 0; padding-left: 18px; line-height: 1.5;">
-                                          <% target.steps.forEach(function(step) { %>
-                                            <li><%= step %></li>
-                                          <% }); %>
-                                        </ol>
-                                    <% } else { %>
-                                        <span style="color: var(--text-muted); font-style: italic;">No interaction steps recorded. Issue found via static scan.</span>
-                                    <% } %>
-                                </div>
-                             </div>
- 
-                             <!-- Right: Visual -->
-                             <div>
-                                <div class="bug-section-title">Visual Evidence</div>
-                                <div class="screenshot-container">
-                                  <img src="<%= target.screenshot %>" alt="Violation Evidence">
-                                </div>
-                             </div>
-                         </div>
+                        <div class="bug-details-body">
+                          <!-- Left: Repro Steps -->
+                          <div style="margin-bottom: 16px;">
+                            <div class="bug-section-title">Reproduction Steps</div>
+                            <div class="bug-content-box">
+                              <% if(target.steps && target.steps.length) { %>
+                                <ol style="margin: 0; padding-left: 18px; line-height: 1.5;">
+                                  <% target.steps.forEach(function(step) { %>
+                                    <li>
+                                      <%= step %>
+                                    </li>
+                                    <% }); %>
+                                </ol>
+                                <% } else { %>
+                                  <span style="color: var(--text-muted); font-style: italic;">No interaction steps
+                                    recorded. Issue found via static scan.</span>
+                                  <% } %>
+                            </div>
+                          </div>
+
+                          <!-- Right: Visual -->
+                          <div>
+                            <div class="bug-section-title">Visual Evidence</div>
+                            <div class="screenshot-container">
+                              <img src="<%= target.screenshot %>" alt="Violation Evidence">
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  <% }); %>
-                <% } %>
+                    <% }); %>
+                      <% } %>
               </div>
             </div>
           </div>
-        <% }); %>
+          <% }); %>
       </div>
 
       <!-- ADO Bug Preview Modal -->
@@ -843,7 +1117,7 @@
                 <label class="ado-form-label">Title</label>
                 <input type="text" id="bugTitleInput" class="ado-form-input" placeholder="Enter bug title">
               </div>
-              
+
               <div class="row">
                 <div class="col-md-6">
                   <div class="ado-field-group">
@@ -880,17 +1154,22 @@
 
               <div class="ado-field-group" id="videoThumbContainer" style="display: none;">
                 <label class="ado-form-label">
-                  <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">videocam</span>
+                  <span class="material-symbols-outlined"
+                    style="font-size: 14px; vertical-align: middle;">videocam</span>
                   Session Recording
                 </label>
                 <video id="bugVideoPreview" class="video-preview-player" controls>
-                   Your browser does not support the video tag.
+                  Your browser does not support the video tag.
                 </video>
               </div>
 
               <div class="ado-field-group" style="margin-bottom: 0;">
-                <div class="ado-repro-preview" style="font-size: 0.75rem; background: #fffcf0; border-color: #f9f0c3; padding: 12px; line-height: 1.5;">
-                  <b>Environment:</b> Playwright engine • <b>URL:</b> <span style="word-break: break-all; color: var(--primary);"><%= data.pageKey %></span>
+                <div class="ado-repro-preview"
+                  style="font-size: 0.75rem; background: #fffcf0; border-color: #f9f0c3; padding: 12px; line-height: 1.5;">
+                  <b>Environment:</b> Playwright engine • <b>URL:</b> <span
+                    style="word-break: break-all; color: var(--primary);">
+                    <%= data.pageKey %>
+                  </span>
                 </div>
               </div>
             </div>
@@ -901,30 +1180,31 @@
           </div>
         </div>
       </div>
-    <% } else { %>
-      <div class="success-verified-card">
-        <span class="material-symbols-outlined success-hero-icon">check_circle</span>
-        <h3 class="success-hero-title">Compliance Verified</h3>
-        <p class="success-hero-desc">Excellent! No accessibility violations were detected for this target resource.</p>
-      </div>
-    <% } %>
+      <% } else { %>
+        <div class="success-verified-card">
+          <span class="material-symbols-outlined success-hero-icon">check_circle</span>
+          <h3 class="success-hero-title">Compliance Verified</h3>
+          <p class="success-hero-desc">Excellent! No accessibility violations were detected for this target resource.
+          </p>
+        </div>
+        <% } %>
 
-    <% if(data.video) { %>
-      <section class="video-card">
-        <div class="video-header">
-          <div class="video-icon-wrap">
-            <span class="material-symbols-outlined">videocam</span>
-          </div>
-          <h2 class="video-title">Audit Session Recording</h2>
-        </div>
-        <div class="ratio ratio-16x9 video-container">
-          <video controls>
-            <source src="<%= data.video %>" type="video/webm">
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      </section>
-    <% } %>
+          <% if(data.video) { %>
+            <section class="video-card">
+              <div class="video-header">
+                <div class="video-icon-wrap">
+                  <span class="material-symbols-outlined">videocam</span>
+                </div>
+                <h2 class="video-title">Audit Session Recording</h2>
+              </div>
+              <div class="ratio ratio-16x9 video-container">
+                <video controls>
+                  <source src="<%= data.video %>" type="video/webm">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </section>
+            <% } %>
   </main>
 
   <footer>
@@ -938,7 +1218,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    window.addEventListener('load', function() {
+    window.addEventListener('load', function () {
       const loader = document.getElementById('loader-overlay');
       loader.style.opacity = '0';
       setTimeout(() => { loader.style.display = 'none'; }, 500);
@@ -971,8 +1251,8 @@
 
     function handleLogBugClick(btn, event) {
       if (event) {
-          event.preventDefault();
-          event.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
       }
       const d = btn.dataset;
       createAzureDevOpsBug(d.title, d.axeId, d.help, d.severity, d.steps, d.screenshot, d.wcag);
@@ -989,12 +1269,12 @@
       // Populate Modal Fields
       document.getElementById('bugTitleInput').value = `[A11y] ${title}`;
       document.getElementById('bugSeverityInput').value = severity;
-      
+
       const steps = JSON.parse(stepsJson);
-      const stepsHtml = steps.length 
+      const stepsHtml = steps.length
         ? `<ol>${steps.map(s => `<li>${s}</li>`).join('')}</ol>`
         : `<i>No interaction steps. Issue identified via static scan.</i>`;
-      
+
       document.getElementById('bugReproPreview').innerHTML = `
         <div style="margin-bottom: 4px;"><b>Rule:</b> ${axeId} (${wcag})</div>
         <div style="margin-bottom: 8px;"><b>Recommendation:</b> ${help}</div>
@@ -1033,36 +1313,36 @@
     // Force focus on title input when modal opens to ensure editability
     const bugModalEl = document.getElementById('bugPreviewModal');
     if (bugModalEl) {
-        bugModalEl.addEventListener('shown.bs.modal', function () {
-            const input = document.getElementById('bugTitleInput');
-            if (input) {
-                input.focus();
-                // Select text for quick editing
-                input.select();
-                // Ensure not inert/disabled
-                input.removeAttribute('readonly');
-                input.removeAttribute('disabled');
-            }
-        });
+      bugModalEl.addEventListener('shown.bs.modal', function () {
+        const input = document.getElementById('bugTitleInput');
+        if (input) {
+          input.focus();
+          // Select text for quick editing
+          input.select();
+          // Ensure not inert/disabled
+          input.removeAttribute('readonly');
+          input.removeAttribute('disabled');
+        }
+      });
     }
 
     // Single Global Event Listener for Confirmation
     document.getElementById('confirmBugBtn').addEventListener('click', async () => {
-        const btn = document.getElementById('confirmBugBtn');
-        const modal = bootstrap.Modal.getInstance(document.getElementById('bugPreviewModal'));
-        
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating...';
-        
-        try {
-          await submitFinalBug();
-          modal.hide();
-        } catch (err) {
-          console.error(err);
-        } finally {
-          btn.disabled = false;
-          btn.innerHTML = 'Create Bug';
-        }
+      const btn = document.getElementById('confirmBugBtn');
+      const modal = bootstrap.Modal.getInstance(document.getElementById('bugPreviewModal'));
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating...';
+
+      try {
+        await submitFinalBug();
+        modal.hide();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Create Bug';
+      }
     });
 
     async function submitFinalBug() {
@@ -1070,7 +1350,7 @@
       const proj = "<%= data.adoProject %>";
       const pat = sessionStorage.getItem('userToken');
       const { axeId, wcag, help, stepsHtml, screenshotBase64 } = window.currentBugData;
-      
+
       const title = document.getElementById('bugTitleInput').value;
       const severity = document.getElementById('bugSeverityInput').value;
 
@@ -1127,7 +1407,6 @@
       else alert('Failed to create bug. Check token and organization settings.');
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
 
+</html>

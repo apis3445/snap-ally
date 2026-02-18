@@ -9,7 +9,7 @@ export interface A11yScannerOptions {
     include?: string | Locator;
     /** Alias for include. */
     box?: string | Locator;
-    
+
     /** Whether to log violations to the console. @default true */
     verbose?: boolean;
     /** Alias for verbose. */
@@ -29,13 +29,17 @@ export interface A11yScannerOptions {
 export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScannerOptions = {}) {
     const verbose = options.verbose ?? true;
     const overlay = new A11yAuditOverlay(page, page.url());
-    
+
     // Configure Axe
     let axeBuilder = new AxeBuilder({ page });
-    
-    if (options.include) {
-        if (typeof options.include === 'string') {
-            axeBuilder = axeBuilder.include(options.include);
+
+    const target = options.include || options.box;
+    if (target) {
+        if (typeof target === 'string') {
+            axeBuilder = axeBuilder.include(target);
+        } else {
+            // AxeBuilder for playwright also supports locators/elements in include
+            axeBuilder = axeBuilder.include(target as any);
         }
     }
 
@@ -54,7 +58,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
     const axeResults = await axeBuilder.analyze();
 
     const violationCount = axeResults.violations.length;
-    
+
     if (verbose && violationCount > 0) {
         console.log(`\n[A11yScanner] Violations found: ${violationCount}`);
         axeResults.violations.forEach((v, i) => {
@@ -79,27 +83,27 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
         let errorIdx = 0;
         const targets: Target[] = [];
         const severityColor = colorMap[violation.impact || ''] || '#757575';
-        
+
         for (const node of violation.nodes) {
             for (const selector of node.target) {
                 const elementSelector = selector.toString();
                 const locator = page.locator(elementSelector);
-                
+
                 await overlay.showViolationOverlay({ id: violation.id, help: violation.help }, severityColor);
-                
+
                 if (await locator.isVisible()) {
                     await overlay.highlightElement(elementSelector, severityColor);
-                    
+
                     // Allow time for video capture or manual inspection during debug
                     // eslint-disable-next-line playwright/no-wait-for-timeout
                     await page.waitForTimeout(2000);
 
                     const screenshotName = `a11y-${violation.id}-${errorIdx++}.png`;
                     const buffer = await overlay.captureAndAttachScreenshot(screenshotName, testInfo);
-                    
+
                     // Capture execution steps for context
                     const excluded = new Set(['Pre Condition', 'Post Condition', 'Description', 'A11y']);
-                    const contextSteps = testInfo.annotations
+                    const contextSteps = (testInfo.annotations || [])
                         .filter(a => !excluded.has(a.type))
                         .map(a => a.description || '');
 
@@ -115,7 +119,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                         stepsJson: JSON.stringify(contextSteps),
                         screenshotBase64: buffer.toString('base64')
                     });
-                    
+
                     await overlay.unhighlightElement();
                 }
             }
