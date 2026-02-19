@@ -124,6 +124,27 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
+## <span aria-hidden="true">⚠️</span> Known Limitations
+
+Automated accessibility testing with Axe-core detects approximately **30–40% of WCAG violations** — those that are deterministic and can be evaluated programmatically, such as:
+
+- Missing `alt` text on images
+- Insufficient color contrast
+- Missing form labels
+- Empty buttons or links
+- Missing ARIA roles and attributes
+
+**The remaining ~60–70% require manual testing**, including:
+
+- Keyboard-only navigation walkthroughs
+- Screen reader testing (NVDA, VoiceOver, JAWS)
+- Cognitive load and reading flow evaluation
+- User testing with people with disabilities
+
+snap-ally automates the "easy wins" in your CI/CD pipeline so your team can focus manual effort on the complex interactions that tools cannot evaluate.
+
+---
+
 ## <span aria-hidden="true">🤝</span> Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
