@@ -74,6 +74,10 @@ class SnapAllyReporter implements Reporter {
         this.tasks.push(this.processTestResult(test, result));
     }
 
+    printsToStdio() {
+        return false;
+    }
+
     private async processTestResult(test: TestCase, result: TestResult) {
         this.testIndex++;
         const sanitizedTitle = test.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
