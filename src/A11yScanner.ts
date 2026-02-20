@@ -3,6 +3,28 @@ import { Page, Locator, expect, TestInfo } from '@playwright/test';
 import { A11yAuditOverlay } from './A11yAuditOverlay';
 import { A11yError, ReportData, Target, Severity } from './models';
 
+/**
+ * Sanitizes a string to be safe for use in file paths and prevents path traversal attacks.
+ * Removes or replaces dangerous characters and path separators.
+ */
+function sanitizePageKey(input: string): string {
+    return input
+        // Remove protocol
+        .replace(/^https?:\/\//, '')
+        // Remove or replace path separators and dangerous characters
+        .replace(/[\/\\:*?"<>|]/g, '-')
+        // Remove any remaining path traversal attempts
+        .replace(/\.\./g, '')
+        // Replace multiple consecutive dashes with a single dash
+        .replace(/-+/g, '-')
+        // Remove leading/trailing dashes
+        .replace(/^-+|-+$/g, '')
+        // Convert to lowercase for consistency
+        .toLowerCase()
+        // Limit length to prevent filesystem issues
+        .substring(0, 200);
+}
+
 
 export interface A11yScannerOptions {
     /** Specific selector or locator to include in the scan. */
@@ -31,7 +53,9 @@ export interface A11yScannerOptions {
 export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScannerOptions = {}) {
     const showTerminal = options.verbose ?? true;
     const showBrowser = options.consoleLog ?? true;
-    const pageKey = options.pageKey || page.url();
+    // Sanitize pageKey to prevent path traversal attacks
+    const rawPageKey = options.pageKey || page.url();
+    const pageKey = sanitizePageKey(rawPageKey);
     const overlay = new A11yAuditOverlay(page, pageKey);
 
     // Configure Axe
@@ -65,21 +89,24 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
 
     if ((showTerminal || showBrowser) && violationCount > 0) {
         const mainMsg = `[A11yScanner] Violations found: ${violationCount}`;
-        if (showTerminal) console.log(`\n${mainMsg}`);
+        
+        // Prepare all detail messages
+        const detailMessages = axeResults.violations.map((v, i) => 
+            `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`
+        );
 
-        // Log to Browser Console
-        if (showBrowser) {
-            await page.evaluate((msg) => console.log(`%c ${msg}`, 'color: #ea580c; font-weight: bold; font-size: 12px;'), mainMsg);
+        // Log to terminal
+        if (showTerminal) {
+            console.log(`\n${mainMsg}`);
+            detailMessages.forEach(msg => console.log(msg));
         }
 
-        for (const [i, v] of axeResults.violations.entries()) {
-            const detailMsg = `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`;
-            if (showTerminal) console.log(detailMsg);
-
-            // Log details to Browser Console
-            if (showBrowser) {
-                await page.evaluate((msg) => console.log(msg), detailMsg);
-            }
+        // Batch log to Browser Console in a single evaluate call
+        if (showBrowser) {
+            await page.evaluate(([mainMsg, details]) => {
+                console.log(`%c ${mainMsg}`, 'color: #ea580c; font-weight: bold; font-size: 12px;');
+                details.forEach((msg: string) => console.log(msg));
+            }, [mainMsg, detailMessages] as [string, string[]]);
         }
     }
 
