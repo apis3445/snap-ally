@@ -21,14 +21,18 @@ export interface A11yScannerOptions {
     tags?: string[];
     /** Any other Axe-core options to pass to the builder. */
     axeOptions?: Record<string, unknown>;
+    /** Custom identifier for the report file name. */
+    pageKey?: string;
 }
 
 /**
  * Performs an accessibility audit using Axe and Lighthouse.
  */
 export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScannerOptions = {}) {
-    const verbose = options.verbose ?? true;
-    const overlay = new A11yAuditOverlay(page, page.url());
+    const showTerminal = options.verbose ?? true;
+    const showBrowser = options.consoleLog ?? true;
+    const pageKey = options.pageKey || page.url();
+    const overlay = new A11yAuditOverlay(page, pageKey);
 
     // Configure Axe
     let axeBuilder = new AxeBuilder({ page });
@@ -59,11 +63,24 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
 
     const violationCount = axeResults.violations.length;
 
-    if (verbose && violationCount > 0) {
-        console.log(`\n[A11yScanner] Violations found: ${violationCount}`);
-        axeResults.violations.forEach((v, i) => {
-            console.log(`  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`);
-        });
+    if ((showTerminal || showBrowser) && violationCount > 0) {
+        const mainMsg = `[A11yScanner] Violations found: ${violationCount}`;
+        if (showTerminal) console.log(`\n${mainMsg}`);
+
+        // Log to Browser Console
+        if (showBrowser) {
+            await page.evaluate((msg) => console.log(`%c ${msg}`, 'color: #ea580c; font-weight: bold; font-size: 12px;'), mainMsg);
+        }
+
+        for (const [i, v] of axeResults.violations.entries()) {
+            const detailMsg = `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`;
+            if (showTerminal) console.log(detailMsg);
+
+            // Log details to Browser Console
+            if (showBrowser) {
+                await page.evaluate((msg) => console.log(msg), detailMsg);
+            }
+        }
     }
 
     // Fail the test if violations found (softly)
@@ -140,7 +157,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
 
     // Prepare data for the reporter
     const reportData: ReportData = {
-        pageKey: page.url(),
+        pageKey,
         accessibilityScore: 0, // No longer used, derivation from Lighthouse removed
         errors,
         video: 'a11y-scan-video.webm', // Reference name for reporter
