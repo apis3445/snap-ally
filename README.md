@@ -81,12 +81,13 @@ test("verify page accessibility", async ({ page }, testInfo) => {
 
   // Advanced scan with configuration
   await scanA11y(page, testInfo, {
+    verbose: true,      // Log results to terminal
+    consoleLog: true,   // Log results to browser console
+    pageKey: 'Homepage', // Custom name for the report file
+    tags: ['wcag2a', 'wcag2aa'], 
     rules: {
-      "color-contrast": { enabled: false }, // Disable specific rule
-    },
-    tags: ["wcag2a", "wcag2aa"], // Focus on specific WCAG levels
-    verbose: true,
-    pageKey: "Homepage", // Custom name for the report file
+      'color-contrast': { enabled: false },
+    }
   });
 });
 ```
@@ -107,13 +108,14 @@ test("verify page accessibility", async ({ page }, testInfo) => {
 
 ### `scanA11y` Options
 
-| Option    | Type       | Description                                           |
-| --------- | ---------- | ----------------------------------------------------- |
-| `include` | `string`   | CSS selector to limit the scan to a specific element. |
-| `verbose` | `boolean`  | Log violations to the console. Defaults to `true`.    |
-| `rules`   | `object`   | Axe-core rule configuration.                          |
-| `tags`    | `string[]` | List of Axe-core tags to run (e.g., `['wcag2aa']`).   |
-| `pageKey` | `string`   | Custom identifier for the report file name.           |
+| Option | Type | Description |
+| --- | --- | --- |
+| `include` | `string` | CSS selector to limit the scan to a specific element. |
+| `verbose` | `boolean` | **Terminal Logs**: Print violations to terminal. Defaults to `true`. |
+| `consoleLog` | `boolean` | **Browser Logs**: Print violations to browser console. Defaults to `true`. |
+| `rules` | `object` | Axe-core rule configuration. |
+| `tags` | `string[]` | List of Axe-core tags to run (e.g., `['wcag2aa']`). |
+| `pageKey` | `string` | Custom identifier for the report file name. |
 
 ---
 

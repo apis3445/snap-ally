@@ -42,6 +42,10 @@ class SnapAllyReporter implements Reporter {
     private options: AccessibilityReporterOptions;
     private projectRoot = 'tests';
 
+    printsToStdio() {
+        return false;
+    }
+
     // Global summary tracking
     private executionSummary: TestSummary = {
         duration: '',
