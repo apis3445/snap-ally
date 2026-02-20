@@ -9,7 +9,7 @@ A powerful, developer-friendly Playwright reporter for **Accessibility testing**
 
 ## 📺 Demo
 
-[![Demo Video](https://cdn.loom.com/sessions/thumbnails/853c04f1f76242a699e8f82e54733007-with-play.gif)](https://www.loom.com/share/853c04f1f76242a699e8f82e54733007)
+**[▶️ Watch the Demo Video](https://www.loom.com/share/853c04f1f76242a699e8f82e54733007)**
 
 ---
 
