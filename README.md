@@ -10,8 +10,8 @@ A powerful, developer-friendly Playwright reporter for **Accessibility testing**
 ## <span aria-hidden="true">📺</span> Demo
 
 <div align="center">
-  <video src="video.webm" width="800" controls aria-label="Snap-Ally accessibility reporter demonstration video showing HTML reports and visual overlays">
-    Your browser does not support the video tag. You can <a href="video.webm">download the video</a> to view it.
+  <video src="https://raw.githubusercontent.com/apis3445/snap-ally/main/video.webm" width="800" controls aria-label="Snap-Ally accessibility reporter demonstration video showing HTML reports and visual overlays">
+    Your browser does not support the video tag. You can <a href="https://raw.githubusercontent.com/apis3445/snap-ally/main/video.webm">download the video</a> to view it.
   </video>
 </div>
 
