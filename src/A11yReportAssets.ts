@@ -28,10 +28,13 @@ export class A11yReportAssets {
 
     /**
      * Copies the test video if available.
-     * Includes a small retry to ensure Playwright has finished flushing the file.
+     * Includes a more robust retry to ensure Playwright has finished flushing the file.
      */
     async copyTestVideo(result: TestResult, destFolder: string): Promise<string> {
-        const videoAttachments = result.attachments.filter(a => a.name === 'video');
+        // More flexible matching for video attachments
+        const videoAttachments = result.attachments.filter(a =>
+            a.name === 'video' || (a.contentType || '').startsWith('video/')
+        );
 
         let bestVideo: string | null = null;
         let maxSize = -1;
@@ -39,13 +42,14 @@ export class A11yReportAssets {
         for (const attachment of videoAttachments) {
             if (!attachment.path) continue;
 
-            // Retry logic: Wait for file to exist and have non-zero size (up to 2 seconds)
+            // Retry logic: Wait for file to exist and have non-zero size (up to 3 seconds)
             let attempts = 0;
             let isReady = false;
-            while (attempts < 10) {
+            while (attempts < 15) {
                 if (fs.existsSync(attachment.path)) {
                     try {
-                        if (fs.statSync(attachment.path).size > 0) {
+                        const stats = fs.statSync(attachment.path);
+                        if (stats.size > 0) {
                             isReady = true;
                             break;
                         }
@@ -68,13 +72,13 @@ export class A11yReportAssets {
                     console.error(`[SnapAlly] Error checking video stats: ${err}`);
                 }
             } else {
-                console.warn(`[SnapAlly] Video attachment found but file is missing or empty: ${attachment.path}`);
+                console.warn(`[SnapAlly] Video attachment found but file is missing or empty after retry: ${attachment.path}`);
             }
         }
 
         if (bestVideo) {
             try {
-                return this.copyToFolder(destFolder, bestVideo);
+                return this.copyToFolder(destFolder, bestVideo, 'video.webm');
             } catch (e) {
                 console.error(`[SnapAlly] Failed to copy video: ${e}`);
                 return path.basename(bestVideo);
@@ -88,12 +92,14 @@ export class A11yReportAssets {
      */
     copyScreenshots(result: TestResult, destFolder: string): string[] {
         return result.attachments
-            .filter(a => a.name === 'screenshot')
+            .filter(a => a.name === 'screenshot' || (a.contentType || '').startsWith('image/'))
             .map(a => {
                 if (a.path) {
                     return this.copyToFolder(destFolder, a.path);
                 } else if (a.body) {
-                    return this.writeBuffer(destFolder, `screenshot-${Date.now()}.png`, a.body);
+                    const timestamp = Date.now();
+                    const name = a.name === 'screenshot' ? `screenshot-${timestamp}.png` : (a.name.endsWith('.png') ? a.name : `${a.name}.png`);
+                    return this.writeBuffer(destFolder, name, a.body);
                 }
                 return '';
             })
@@ -105,13 +111,14 @@ export class A11yReportAssets {
      */
     copyPngAttachments(result: TestResult, destFolder: string): { path: string, name: string }[] {
         return result.attachments
-            .filter(a => a.name.endsWith('.png') && a.name !== 'screenshot')
+            .filter(a => (a.name.endsWith('.png') || (a.contentType || '') === 'image/png') && a.name !== 'screenshot')
             .map(a => {
                 let name = '';
                 if (a.path) {
                     name = this.copyToFolder(destFolder, a.path, a.name);
                 } else if (a.body) {
-                    name = this.writeBuffer(destFolder, a.name, a.body);
+                    const safeName = a.name.endsWith('.png') ? a.name : `${a.name}.png`;
+                    name = this.writeBuffer(destFolder, safeName, a.body);
                 }
                 return name ? { path: name, name: a.name } : null;
             })
@@ -124,7 +131,10 @@ export class A11yReportAssets {
     copyAllOtherAttachments(result: TestResult, destFolder: string): { path: string, name: string }[] {
         const excludedNames = ['screenshot', 'video', 'A11y'];
         return result.attachments
-            .filter(a => !excludedNames.includes(a.name) && !a.name.endsWith('.png'))
+            .filter(a => !excludedNames.includes(a.name) &&
+                !a.name.endsWith('.png') &&
+                !(a.contentType || '').startsWith('image/') &&
+                !(a.contentType || '').startsWith('video/'))
             .map(a => {
                 let name = '';
                 if (a.path) {

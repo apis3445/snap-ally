@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { Page, Locator, expect, TestInfo } from '@playwright/test';
 import { A11yAuditOverlay } from './A11yAuditOverlay';
 import { A11yError, ReportData, Target, Severity } from './models';
+import { A11yTimeUtils } from './A11yTimeUtils';
 
 /**
  * Sanitizes a string to be safe for use in file paths and prevents path traversal attacks.
@@ -83,15 +84,24 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
         axeBuilder = axeBuilder.options(options.axeOptions);
     }
 
-    const axeResults = await axeBuilder.analyze();
+    let axeResults;
+    try {
+        axeResults = await axeBuilder.analyze();
+    } catch (error: any) {
+        if (error.message && (error.message.includes('Test ended') || error.message.includes('Target page, context or browser has been closed'))) {
+            console.warn(`[SnapAlly] Accessibility scan skipped: ${error.message}`);
+            return;
+        }
+        throw error;
+    }
 
     const violationCount = axeResults.violations.length;
 
     if ((showTerminal || showBrowser) && violationCount > 0) {
         const mainMsg = `[A11yScanner] Violations found: ${violationCount}`;
-        
+
         // Prepare all detail messages
-        const detailMessages = axeResults.violations.map((v, i) => 
+        const detailMessages = axeResults.violations.map((v, i) =>
             `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`
         );
 
@@ -138,9 +148,9 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                 if (await locator.isVisible()) {
                     await overlay.highlightElement(elementSelector, severityColor);
 
-                    // Allow time for video capture or manual inspection during debug
+                    // Allow a small time for overlay highlight to be visible in video
                     // eslint-disable-next-line playwright/no-wait-for-timeout
-                    await page.waitForTimeout(2000);
+                    await page.waitForTimeout(100);
 
                     const screenshotName = `a11y-${violation.id}-${errorIdx++}.png`;
                     const buffer = await overlay.captureAndAttachScreenshot(screenshotName, testInfo);
@@ -185,15 +195,17 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
     // Prepare data for the reporter
     const reportData: ReportData = {
         pageKey,
+        pageUrl: page.url(),
         accessibilityScore: 0, // No longer used, derivation from Lighthouse removed
-        errors,
+        a11yErrors: errors,
         video: 'a11y-scan-video.webm', // Reference name for reporter
         criticalColor: Severity.critical,
         seriousColor: Severity.serious,
         moderateColor: Severity.moderate,
         minorColor: Severity.minor,
         adoOrganization: process.env.ADO_ORGANIZATION || '',
-        adoProject: process.env.ADO_PROJECT || ''
+        adoProject: process.env.ADO_PROJECT || '',
+        timestamp: A11yTimeUtils.formatDate(new Date())
     };
 
     await overlay.addTestAttachment(testInfo, 'A11y', JSON.stringify(reportData));

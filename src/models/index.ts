@@ -1,9 +1,10 @@
 
 export interface ReportData {
     pageKey: string;
+    pageUrl?: string;
     accessibilityScore: number;
     video: string;
-    errors: A11yError[];
+    a11yErrors: A11yError[];
     criticalColor: string;
     seriousColor: string;
     moderateColor: string;
@@ -11,6 +12,7 @@ export interface ReportData {
     adoOrganization?: string;
     adoProject?: string;
     adoPat?: string;
+    timestamp?: string;
 }
 
 export interface A11yError {
@@ -56,6 +58,7 @@ export interface TestResults {
     duration: string;
     description: string;
     status: string;
+    pageUrl?: string;
     browser: string;
     tags: string[];
     preConditions: string[];
@@ -70,9 +73,16 @@ export interface TestResults {
     executionReportPath?: string;
     a11yErrors?: A11yError[];
     a11yErrorCount?: number;
+    colors?: {
+        critical?: string;
+        serious?: string;
+        moderate?: string;
+        minor?: string;
+    };
 }
 
 export interface TestSummary {
+    date?: string;
     duration: string;
     status: string;
     statusIcon: string;
