@@ -59,7 +59,8 @@ class SnapAllyReporter implements Reporter {
         groupedResults: {},
         wcagErrors: {},
         totalA11yErrorCount: 0,
-        browserSummaries: {}
+        browserSummaries: {},
+        date: ''
     };
 
     // Track async tasks to ensure they finish before onEnd
@@ -92,16 +93,16 @@ class SnapAllyReporter implements Reporter {
 
         const tags = test.tags.map(t => t.replace('@', ''));
         const statusIcon = TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
-        const browser = test.parent.project()?.name || 'unknown';
+        const projectUse = test.parent.project()?.use as any || {};
+        const browser = test.parent.project()?.name || projectUse.browserName || projectUse.defaultBrowserType || 'chromium';
 
         const descAnnotation = test.annotations.find(a => a.type === 'Description');
         const description = descAnnotation?.description || 'No Description';
 
-        // Prepare steps from annotations
-        const skipTypes = new Set(['Pre Condition', 'Post Condition', 'Description', 'A11y']);
-        const steps = test.annotations
-            .filter(a => !skipTypes.has(a.type))
-            .map(a => a.description || 'Step');
+        // Prepare steps from actual test.step calls instead of just annotations
+        const steps = result.steps
+            .filter(s => s.category === 'test.step')
+            .map(s => s.title);
 
         const preConditions = test.annotations
             .filter(a => a.type === 'Pre Condition')
@@ -140,6 +141,7 @@ class SnapAllyReporter implements Reporter {
         let a11yReportPath: string | undefined = undefined;
         let a11yErrorCount = 0;
         let aggregatedA11yErrors: A11yError[] = [];
+        let testStatsPageUrl: string | undefined = undefined;
 
         // Loop through all accessibility scans in this test
         for (const [index, source] of a11yDataSources.entries()) {
@@ -203,8 +205,26 @@ class SnapAllyReporter implements Reporter {
             // Sync video name
             if (video) reportData.video = video;
 
+            // Backfill steps from actual test.step calls if annotations were empty
+            const filteredSteps = steps.filter(s => !s.includes('Capture A11y screenshot'));
+            if (filteredSteps.length > 0) {
+                reportData.errors.forEach(err => {
+                    err.target.forEach(t => {
+                        if (!t.steps || t.steps.length === 0) {
+                            t.steps = filteredSteps;
+                            t.stepsJson = JSON.stringify(filteredSteps);
+                        }
+                    });
+                });
+            }
+
             const auditFile = path.join(testResultsFolder, a11yReportName);
             await this.renderer.render('accessibility-report.html', { data: reportData, folderTest: testResultsFolder }, testResultsFolder, auditFile);
+
+            // Capture the first page URL for the testStats if not already set
+            if (reportData.pageUrl && !testStatsPageUrl) {
+                testStatsPageUrl = reportData.pageUrl;
+            }
 
             // --- 3. Update Browser-Specific Summary (Partial Aggregation) ---
             if (!this.executionSummary.browserSummaries![browser]) {
@@ -300,13 +320,15 @@ class SnapAllyReporter implements Reporter {
             steps,
             postConditions,
             statusIcon,
+            pageUrl: testStatsPageUrl,
             videoPath: video,
             screenshotPaths: screenshots,
             attachments: allAttachments,
             errors: errorLogs,
             a11yReportPath,
             a11yErrorCount,
-            a11yErrors: aggregatedA11yErrors
+            a11yErrors: aggregatedA11yErrors,
+            colors: this.options.colors
         };
 
         this.executionSummary.groupedResults[fileGroup].push(testStats);
@@ -332,7 +354,7 @@ class SnapAllyReporter implements Reporter {
 
         // Render Step Report
         const indexFile = path.join(testResultsFolder, `execution-${sanitizedTitle}.html`);
-        await this.renderer.render('test-execution-report.html', { result: testStats, colors }, testResultsFolder, indexFile);
+        await this.renderer.render('test-execution-report.html', { ...testStats, colors }, testResultsFolder, indexFile);
     }
 
     async onEnd(result: FullResult) {
@@ -343,6 +365,7 @@ class SnapAllyReporter implements Reporter {
         this.executionSummary.duration = A11yTimeUtils.formatDuration(result.duration);
         this.executionSummary.status = result.status;
         this.executionSummary.statusIcon = TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
+        this.executionSummary.date = A11yTimeUtils.formatDate(new Date());
 
         const colors = {
             critical: this.options.colors?.critical || '#c92a2a',
@@ -351,7 +374,7 @@ class SnapAllyReporter implements Reporter {
             minor: this.options.colors?.minor || '#0891b2'
         };
 
-        await this.renderer.render('execution-summary.html', { results: this.executionSummary, colors }, this.outputFolder, summaryFile);
+        await this.renderer.render('execution-summary.html', { ...this.executionSummary, colors }, this.outputFolder, summaryFile);
 
         console.log(`\n[SnapAlly] Reports generated in: ${path.resolve(this.outputFolder)}`);
     }

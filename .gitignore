@@ -54,3 +54,7 @@ temp/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+steps-report/
+playwright-report/
+tests/

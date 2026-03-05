@@ -1,43 +1,48 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as ejs from 'ejs';
 
 /**
- * Handles the rendering of HTML reports using EJS templates.
+ * Handles the rendering of HTML reports using static templates and JSON data injection.
  */
 export class A11yHtmlRenderer {
 
     /**
-     * Renders an HTML template and saves it to the specified file.
+     * Renders a static HTML template by copying it and generating the accompanied data payload.
      * @param templateName The template file name in the templates folder.
-     * @param data The data object to pass to EJS.
+     * @param data The data object to pass to the client-side JS app.
      * @param outputFolder The folder where the rendered file will be saved.
      * @param outputFileName The full path of the output file.
      */
     async render(templateName: string, data: Record<string, unknown>, outputFolder: string, outputFileName: string) {
         // Resolve path relative to this file (dist/A11yHtmlRenderer.js)
-        const templatePath = path.join(__dirname, 'templates', templateName);
-        
-        let templateContent = '';
-        try {
-            templateContent = fs.readFileSync(templatePath, 'utf8');
-        } catch {
-            throw new Error(`[A11yHtmlRenderer] Template not found: ${templatePath}`);
-        }
+        const templatesDir = path.join(__dirname, 'templates');
+        const templatePath = path.join(templatesDir, templateName);
+        const cssPath = path.join(templatesDir, 'global-report-styles.css');
+        const jsPath = path.join(templatesDir, 'report-app.js');
 
-        let html = '';
-        try {
-            html = ejs.render(templateContent, data);
-        } catch (error) {
-            console.error(`[A11yHtmlRenderer] EJS Render Error (${templateName}):`, error);
-            throw error;
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`[A11yHtmlRenderer] Template not found: ${templatePath}`);
         }
 
         if (!fs.existsSync(outputFolder)) {
             fs.mkdirSync(outputFolder, { recursive: true });
         }
-        
-        fs.writeFileSync(outputFileName, html);
+
+        // 1. Copy the pure HTML template to the output location
+        fs.copyFileSync(templatePath, outputFileName);
+
+        // 2. Wrap the report data in a JS variable and write data.js next to the HTML file
+        const outputDir = path.dirname(outputFileName);
+        const dataJsPath = path.join(outputDir, 'data.js');
+        const jsContent = `window.snapAllyData = ${JSON.stringify(data)};`;
+        fs.writeFileSync(dataJsPath, jsContent, 'utf8');
+
+        // 3. Copy the global CSS and JS rendering engine next to the HTML file
+        const outCssPath = path.join(outputDir, 'global-report-styles.css');
+        const outJsPath = path.join(outputDir, 'report-app.js');
+
+        try { if (fs.existsSync(cssPath)) fs.copyFileSync(cssPath, outCssPath); } catch (e) { console.error('Error copying CSS:', e); }
+        try { if (fs.existsSync(jsPath)) fs.copyFileSync(jsPath, outJsPath); } catch (e) { console.error('Error copying JS:', e); }
     }
 
     /**
