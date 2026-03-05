@@ -410,7 +410,7 @@ function renderAccessibilityReport(injectedData) {
   const data = injectedData.data || injectedData;
   const pageUrl = data.pageUrl || data.pageKey || 'Resource';
   const timestamp = data.timestamp || new Date().toLocaleString();
-  const violations = data.a11yErrors || data.violations || [];
+  const violations = data.a11yErrors || data.errors || data.violations || [];
   let failedCount = 0;
   if (typeof data.a11yErrorCount !== 'undefined') {
     failedCount = data.a11yErrorCount;

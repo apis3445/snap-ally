@@ -197,7 +197,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
         pageKey,
         pageUrl: page.url(),
         accessibilityScore: 0, // No longer used, derivation from Lighthouse removed
-        errors,
+        a11yErrors: errors,
         video: 'a11y-scan-video.webm', // Reference name for reporter
         criticalColor: Severity.critical,
         seriousColor: Severity.serious,

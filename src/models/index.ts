@@ -4,7 +4,7 @@ export interface ReportData {
     pageUrl?: string;
     accessibilityScore: number;
     video: string;
-    errors: A11yError[];
+    a11yErrors: A11yError[];
     criticalColor: string;
     seriousColor: string;
     moderateColor: string;

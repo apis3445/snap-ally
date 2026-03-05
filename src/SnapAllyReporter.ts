@@ -208,7 +208,7 @@ class SnapAllyReporter implements Reporter {
             // Backfill steps from actual test.step calls if annotations were empty
             const filteredSteps = steps.filter(s => !s.includes('Capture A11y screenshot'));
             if (filteredSteps.length > 0) {
-                reportData.errors.forEach(err => {
+                reportData.a11yErrors.forEach(err => {
                     err.target.forEach(t => {
                         if (!t.steps || t.steps.length === 0) {
                             t.steps = filteredSteps;
@@ -244,14 +244,14 @@ class SnapAllyReporter implements Reporter {
             }
             const bSummary = this.executionSummary.browserSummaries![browser];
 
-            if (reportData.errors && reportData.errors.length > 0) {
+            if (reportData.a11yErrors && reportData.a11yErrors.length > 0) {
                 // Aggregate counts
-                const scanErrorCount = reportData.errors.reduce((sum: number, err: A11yError) => sum + (err.total || 0), 0);
+                const scanErrorCount = reportData.a11yErrors.reduce((sum: number, err: A11yError) => sum + (err.total || 0), 0);
                 a11yErrorCount += scanErrorCount;
 
-                aggregatedA11yErrors.push(...reportData.errors);
+                aggregatedA11yErrors.push(...reportData.a11yErrors);
 
-                reportData.errors.forEach((err: A11yError) => {
+                reportData.a11yErrors.forEach((err: A11yError) => {
                     const rule = err.id;
 
                     // Local Browser aggregation 
