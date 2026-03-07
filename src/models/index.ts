@@ -1,4 +1,3 @@
-
 export interface ReportData {
     pageKey: string;
     pageUrl?: string;
@@ -46,7 +45,7 @@ export enum Severity {
     minor = 'minor',
     moderate = 'moderate',
     serious = 'serious',
-    critical = 'critical'
+    critical = 'critical',
 }
 
 export interface TestResults {
@@ -92,16 +91,17 @@ export interface TestSummary {
     totalFlaky: number;
     totalSkipped: number;
     groupedResults: { [key: string]: TestResults[] };
-    wcagErrors: { [key: string]: { count: number; severity: string; helpUrl?: string; description?: string } };
+    wcagErrors: {
+        [key: string]: { count: number; severity: string; helpUrl?: string; description?: string };
+    };
     totalA11yErrorCount: number;
     browserSummaries?: { [browser: string]: TestSummary };
 }
-
 
 export enum TestStatusIcon {
     passed = 'check_circle',
     failed = 'cancel',
     skipped = 'remove_circle',
     timedOut = 'alarm_off',
-    interrupted = 'block'
+    interrupted = 'block',
 }

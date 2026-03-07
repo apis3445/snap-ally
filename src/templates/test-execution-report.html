@@ -1,199 +1,272 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Snap Ally - Test Execution</title>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snap Ally - Test Execution</title>
+        <!-- Modern Typography and Core Styles -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
 
-  <!-- Modern Typography and Core Styles -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <!-- Snap Ally Shared Template Styles -->
+        <link rel="stylesheet" href="global-report-styles.css" />
+    </head>
 
-  <!-- Snap Ally Shared Template Styles -->
-  <link rel="stylesheet" href="global-report-styles.css">
-</head>
+    <body>
+        <header>
+            <a href="#" class="brand" style="cursor: default">
+                <div class="brand-icon">
+                    <span class="material-symbols-outlined" style="font-size: 22px"
+                        >fact_check</span
+                    >
+                </div>
+                <h1>Test Execution Report</h1>
+            </a>
+            <a href="../summary.html" class="back-link">
+                <span class="material-symbols-outlined" style="font-size: 18px">arrow_back</span>
+                Back to Summary
+            </a>
+        </header>
 
-<body>
-  <header>
-    <a href="#" class="brand" style="cursor: default;">
-      <div class="brand-icon">
-        <span class="material-symbols-outlined" style="font-size: 22px;">fact_check</span>
-      </div>
-      <h1>Test Execution Report</h1>
-    </a>
-    <a href="../summary.html" class="back-link">
-      <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
-      Back to Summary
-    </a>
-  </header>
+        <div class="container" id="test-execution-root" style="display: none">
+            <!-- Report Header -->
+            <div class="report-header">
+                <div class="header-info" style="width: 100%">
+                    <div
+                        style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-start;
+                            margin-bottom: 4px;
+                        "
+                    >
+                        <div style="display: flex; align-items: center; gap: 16px">
+                            <h1 class="report-title" id="report-title" style="margin: 0"></h1>
+                            <div class="status-badge" id="report-status-badge">
+                                <span
+                                    class="material-symbols-outlined"
+                                    id="report-status-icon"
+                                    style="font-size: 16px"
+                                ></span>
+                                <span id="report-status-text"></span>
+                            </div>
+                            <div
+                                class="status-badge status-passed-a11y"
+                                id="report-a11y-verified"
+                                style="display: none"
+                            >
+                                <span class="material-symbols-outlined" style="font-size: 16px"
+                                    >verified</span
+                                >
+                                A11y Verified
+                            </div>
+                        </div>
 
-  <div class="container" id="test-execution-root" style="display: none;">
-    <!-- Report Header -->
-    <div class="report-header">
-      <div class="header-info" style="width: 100%;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <h1 class="report-title" id="report-title" style="margin: 0;"></h1>
-            <div class="status-badge" id="report-status-badge">
-              <span class="material-symbols-outlined" id="report-status-icon" style="font-size: 16px;"></span>
-              <span id="report-status-text"></span>
+                        <div
+                            class="duration-text"
+                            style="color: var(--text-muted); font-size: 0.9rem"
+                        >
+                            Duration:
+                            <strong
+                                class="duration-val"
+                                id="report-duration"
+                                style="color: var(--text-main); font-size: 1.1rem"
+                            ></strong>
+                        </div>
+                    </div>
+
+                    <div
+                        style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            width: 100%;
+                        "
+                    >
+                        <div style="display: flex; align-items: center; gap: 8px">
+                            <span class="browser-chip" id="report-browser"></span>
+                            <span id="report-tags-container"></span>
+                            <template id="tag-template">
+                                <span class="tag-badge"></span>
+                            </template>
+                        </div>
+
+                        <a
+                            href="#"
+                            id="view-a11y-report-link"
+                            class="text-link"
+                            style="display: none"
+                        >
+                            <span class="material-symbols-outlined" style="font-size: 18px"
+                                >accessibility_new</span
+                            >
+                            View Accessibility Report
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="status-badge status-passed-a11y" id="report-a11y-verified" style="display: none;">
-              <span class="material-symbols-outlined" style="font-size: 16px;">verified</span>
-              A11y Verified
+
+            <!-- Description -->
+            <div class="card" id="card-description" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">info</span> Description
+                </h2>
+                <p id="report-description"></p>
             </div>
-          </div>
 
-          <div class="duration-text" style="color: var(--text-muted); font-size: 0.9rem;">
-            Duration: <strong class="duration-val" id="report-duration"
-              style="color: var(--text-main); font-size: 1.1rem;"></strong>
-          </div>
-        </div>
+            <!-- Pre-conditions -->
+            <div class="card" id="card-preconditions" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">settings</span>
+                    Pre-conditions
+                </h2>
+                <ol id="list-preconditions"></ol>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="browser-chip" id="report-browser"></span>
-            <span id="report-tags-container"></span>
-            <template id="tag-template">
-              <span class="tag-badge"></span>
+            <!-- Test Steps -->
+            <div class="card" id="card-steps" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">analytics</span> Test Steps
+                </h2>
+                <ol id="list-steps"></ol>
+            </div>
+
+            <!-- String Item Template (reused for Pre-conditions, Steps, Post-conditions, Exceptions) -->
+            <template id="string-item-template">
+                <li></li>
             </template>
-          </div>
 
-          <a href="#" id="view-a11y-report-link" class="text-link" style="display: none;">
-            <span class="material-symbols-outlined" style="font-size: 18px;">accessibility_new</span>
-            View Accessibility Report
-          </a>
+            <!-- Post-conditions -->
+            <div class="card" id="card-postconditions" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">check_circle</span>
+                    Post-conditions
+                </h2>
+                <ol id="list-postconditions"></ol>
+            </div>
+
+            <!-- Recording -->
+            <div class="card" id="card-video" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">videocam</span> Recording
+                </h2>
+                <video controls>
+                    <source id="report-video-source" type="video/webm" />
+                </video>
+            </div>
+
+            <!-- Evidence Gap (Screenshots) -->
+            <div class="card" id="card-screenshots" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">image</span> Evidence Gap
+                </h2>
+                <div class="screenshot-grid" id="grid-screenshots"></div>
+            </div>
+            <template id="screenshot-template">
+                <div class="screenshot-item">
+                    <img alt="Evidence" />
+                </div>
+            </template>
+
+            <!-- Attachments -->
+            <div class="card" id="card-attachments" style="display: none">
+                <h2>
+                    <span class="material-symbols-outlined section-icon">attachment</span>
+                    Attachments
+                </h2>
+                <div id="list-attachments"></div>
+            </div>
+            <template id="attachment-template">
+                <a target="_blank" class="attachment-item">
+                    <span class="material-symbols-outlined" style="font-size: 18px"
+                        >description</span
+                    >
+                    <span class="attachment-name"></span>
+                </a>
+            </template>
+
+            <!-- Accessibility Success -->
+            <div class="success-verified-card" id="card-a11y-success" style="display: none">
+                <span class="material-symbols-outlined success-hero-icon">check_circle</span>
+                <h3 class="success-hero-title">Compliance Verified</h3>
+                <p class="success-hero-desc">
+                    Excellent! No accessibility violations were detected for this target resource.
+                </p>
+            </div>
+
+            <!-- Accessibility Errors -->
+            <div class="card error-card" id="card-a11y-errors" style="display: none">
+                <h2 class="violations-title">
+                    <span class="material-symbols-outlined section-icon" style="color: #9f1239"
+                        >accessibility_new</span
+                    >
+                    Accessibility Violations
+                </h2>
+                <div class="violations-container" id="list-a11y-errors"></div>
+            </div>
+            <template id="a11y-error-template">
+                <div class="violation-item">
+                    <div class="violation-header">
+                        <span class="rule-id"></span>
+                        <span class="sev-badge"></span>
+                    </div>
+                    <div class="help-text"></div>
+                    <div class="desc-text" style="display: none"></div>
+
+                    <div class="instance-grid"></div>
+
+                    <div class="occ-row">
+                        <span class="material-symbols-outlined" style="font-size: 16px">tag</span>
+                        <span>Occurrences: <strong class="occ-count"></strong></span>
+                    </div>
+                </div>
+            </template>
+            <template id="a11y-instance-template">
+                <div class="instance-card">
+                    <div class="instance-img-wrap">
+                        <img class="instance-img" />
+                    </div>
+                    <div class="instance-info"></div>
+                </div>
+            </template>
+
+            <!-- Exceptions -->
+            <div class="card error-card" id="card-exceptions" style="display: none">
+                <h2 class="exceptions-title">
+                    <span class="material-symbols-outlined section-icon" style="color: #9f1239"
+                        >error</span
+                    >
+                    Exceptions
+                </h2>
+                <ol id="list-exceptions"></ol>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Description -->
-    <div class="card" id="card-description" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">info</span> Description</h2>
-      <p id="report-description"></p>
-    </div>
+        <footer>
+            <div class="powered-by">Generated by <span class="badge-tool">Snap Ally</span></div>
+            <div>
+                <span style="opacity: 0.7">&copy; <span id="year"></span> Snap Ally</span>
+            </div>
+        </footer>
 
-    <!-- Pre-conditions -->
-    <div class="card" id="card-preconditions" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">settings</span> Pre-conditions</h2>
-      <ol id="list-preconditions"></ol>
-    </div>
+        <!-- Scripts -->
+        <script>
+            document.getElementById('year').textContent = new Date().getFullYear();
+        </script>
 
-    <!-- Test Steps -->
-    <div class="card" id="card-steps" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">analytics</span> Test Steps</h2>
-      <ol id="list-steps"></ol>
-    </div>
+        <!-- Injected JSON Payload -->
+        <script src="data.js"></script>
 
-    <!-- String Item Template (reused for Pre-conditions, Steps, Post-conditions, Exceptions) -->
-    <template id="string-item-template">
-      <li></li>
-    </template>
-
-    <!-- Post-conditions -->
-    <div class="card" id="card-postconditions" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">check_circle</span> Post-conditions</h2>
-      <ol id="list-postconditions"></ol>
-    </div>
-
-    <!-- Recording -->
-    <div class="card" id="card-video" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">videocam</span> Recording</h2>
-      <video controls>
-        <source id="report-video-source" type="video/webm" />
-      </video>
-    </div>
-
-    <!-- Evidence Gap (Screenshots) -->
-    <div class="card" id="card-screenshots" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">image</span> Evidence Gap</h2>
-      <div class="screenshot-grid" id="grid-screenshots"></div>
-    </div>
-    <template id="screenshot-template">
-      <div class="screenshot-item">
-        <img alt="Evidence" />
-      </div>
-    </template>
-
-    <!-- Attachments -->
-    <div class="card" id="card-attachments" style="display: none;">
-      <h2><span class="material-symbols-outlined section-icon">attachment</span> Attachments</h2>
-      <div id="list-attachments"></div>
-    </div>
-    <template id="attachment-template">
-      <a target="_blank" class="attachment-item">
-        <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
-        <span class="attachment-name"></span>
-      </a>
-    </template>
-
-    <!-- Accessibility Success -->
-    <div class="success-verified-card" id="card-a11y-success" style="display: none;">
-      <span class="material-symbols-outlined success-hero-icon">check_circle</span>
-      <h3 class="success-hero-title">Compliance Verified</h3>
-      <p class="success-hero-desc">Excellent! No accessibility violations were detected for this target resource.</p>
-    </div>
-
-    <!-- Accessibility Errors -->
-    <div class="card error-card" id="card-a11y-errors" style="display: none;">
-      <h2 class="violations-title">
-        <span class="material-symbols-outlined section-icon" style="color: #9f1239;">accessibility_new</span>
-        Accessibility Violations
-      </h2>
-      <div class="violations-container" id="list-a11y-errors"></div>
-    </div>
-    <template id="a11y-error-template">
-      <div class="violation-item">
-        <div class="violation-header">
-          <span class="rule-id"></span>
-          <span class="sev-badge"></span>
-        </div>
-        <div class="help-text"></div>
-        <div class="desc-text" style="display: none;"></div>
-
-        <div class="instance-grid"></div>
-
-        <div class="occ-row">
-          <span class="material-symbols-outlined" style="font-size: 16px;">tag</span>
-          <span>Occurrences: <strong class="occ-count"></strong></span>
-        </div>
-      </div>
-    </template>
-    <template id="a11y-instance-template">
-      <div class="instance-card">
-        <div class="instance-img-wrap">
-          <img class="instance-img">
-        </div>
-        <div class="instance-info"></div>
-      </div>
-    </template>
-
-    <!-- Exceptions -->
-    <div class="card error-card" id="card-exceptions" style="display: none;">
-      <h2 class="exceptions-title"><span class="material-symbols-outlined section-icon"
-          style="color: #9f1239;">error</span> Exceptions</h2>
-      <ol id="list-exceptions"></ol>
-    </div>
-  </div>
-
-  <footer>
-    <div class="powered-by">Generated by <span class="badge-tool">Snap Ally</span></div>
-    <div><span style="opacity: 0.7;">&copy; <span id="year"></span> Snap Ally</span></div>
-  </footer>
-
-  <!-- Scripts -->
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-
-  <!-- Injected JSON Payload -->
-  <script src="data.js"></script>
-
-  <!-- Report Logic -->
-  <script src="report-app.js"></script>
-</body>
-
+        <!-- Report Logic -->
+        <script src="report-app.js"></script>
+    </body>
 </html>

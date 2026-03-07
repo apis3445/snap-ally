@@ -1,3 +1,9 @@
+## 2026-03-07
+
+### Changed
+- Refined report UI structure and styling for improved readability and consistency.
+- Added ESLint/Prettier tooling and updated package metadata for the next beta release.
+
 ## 2026-03-05
 
 ### Changed

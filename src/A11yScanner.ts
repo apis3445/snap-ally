@@ -9,23 +9,24 @@ import { A11yTimeUtils } from './A11yTimeUtils';
  * Removes or replaces dangerous characters and path separators.
  */
 function sanitizePageKey(input: string): string {
-    return input
-        // Remove protocol
-        .replace(/^https?:\/\//, '')
-        // Remove or replace path separators and dangerous characters
-        .replace(/[\/\\:*?"<>|]/g, '-')
-        // Remove any remaining path traversal attempts
-        .replace(/\.\./g, '')
-        // Replace multiple consecutive dashes with a single dash
-        .replace(/-+/g, '-')
-        // Remove leading/trailing dashes
-        .replace(/^-+|-+$/g, '')
-        // Convert to lowercase for consistency
-        .toLowerCase()
-        // Limit length to prevent filesystem issues
-        .substring(0, 200);
+    return (
+        input
+            // Remove protocol
+            .replace(/^https?:\/\//, '')
+            // Remove or replace path separators and dangerous characters
+            .replace(/[\/\\:*?"<>|]/g, '-')
+            // Remove any remaining path traversal attempts
+            .replace(/\.\./g, '')
+            // Replace multiple consecutive dashes with a single dash
+            .replace(/-+/g, '-')
+            // Remove leading/trailing dashes
+            .replace(/^-+|-+$/g, '')
+            // Convert to lowercase for consistency
+            .toLowerCase()
+            // Limit length to prevent filesystem issues
+            .substring(0, 200)
+    );
 }
-
 
 export interface A11yScannerOptions {
     /** Specific selector or locator to include in the scan. */
@@ -68,6 +69,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
             axeBuilder = axeBuilder.include(target);
         } else {
             // AxeBuilder for playwright also supports locators/elements in include
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             axeBuilder = axeBuilder.include(target as any);
         }
     }
@@ -87,8 +89,12 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
     let axeResults;
     try {
         axeResults = await axeBuilder.analyze();
-    } catch (error: any) {
-        if (error.message && (error.message.includes('Test ended') || error.message.includes('Target page, context or browser has been closed'))) {
+    } catch (error: unknown) {
+        if (
+            error instanceof Error &&
+            (error.message.includes('Test ended') ||
+                error.message.includes('Target page, context or browser has been closed'))
+        ) {
             console.warn(`[SnapAlly] Accessibility scan skipped: ${error.message}`);
             return;
         }
@@ -101,35 +107,43 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
         const mainMsg = `[A11yScanner] Violations found: ${violationCount}`;
 
         // Prepare all detail messages
-        const detailMessages = axeResults.violations.map((v, i) =>
-            `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`
+        const detailMessages = axeResults.violations.map(
+            (v, i) => `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`
         );
 
         // Log to terminal
         if (showTerminal) {
             console.log(`\n${mainMsg}`);
-            detailMessages.forEach(msg => console.log(msg));
+            detailMessages.forEach((msg) => console.log(msg));
         }
 
         // Batch log to Browser Console in a single evaluate call
         if (showBrowser) {
-            await page.evaluate(([mainMsg, details]) => {
-                console.log(`%c ${mainMsg}`, 'color: #ea580c; font-weight: bold; font-size: 12px;');
-                details.forEach((msg: string) => console.log(msg));
-            }, [mainMsg, detailMessages] as [string, string[]]);
+            await page.evaluate(
+                ([mainMsg, details]) => {
+                    console.log(
+                        `%c ${mainMsg}`,
+                        'color: #ea580c; font-weight: bold; font-size: 12px;'
+                    );
+                    details.forEach((msg: string) => console.log(msg));
+                },
+                [mainMsg, detailMessages] as [string, string[]]
+            );
         }
     }
 
     // Fail the test if violations found (softly)
-    expect.soft(violationCount, `Accessibility audit failed with ${violationCount} violations.`).toBe(0);
+    expect
+        .soft(violationCount, `Accessibility audit failed with ${violationCount} violations.`)
+        .toBe(0);
 
     // Run Axe Audit
     const errors: A11yError[] = [];
     const colorMap: Record<string, string> = {
-        minor: '#0ea5e9',    // Ocean Blue
+        minor: '#0ea5e9', // Ocean Blue
         moderate: '#f59e0b', // Amber/Honey
-        serious: '#ea580c',  // Deep Orange
-        critical: '#dc2626'  // Power Red
+        serious: '#ea580c', // Deep Orange
+        critical: '#dc2626', // Power Red
     };
 
     // Process violations for the report
@@ -143,7 +157,10 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                 const elementSelector = selector.toString();
                 const locator = page.locator(elementSelector);
 
-                await overlay.showViolationOverlay({ id: violation.id, help: violation.help }, severityColor);
+                await overlay.showViolationOverlay(
+                    { id: violation.id, help: violation.help },
+                    severityColor
+                );
 
                 if (await locator.isVisible()) {
                     await overlay.highlightElement(elementSelector, severityColor);
@@ -153,13 +170,21 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                     await page.waitForTimeout(100);
 
                     const screenshotName = `a11y-${violation.id}-${errorIdx++}.png`;
-                    const buffer = await overlay.captureAndAttachScreenshot(screenshotName, testInfo);
+                    const buffer = await overlay.captureAndAttachScreenshot(
+                        screenshotName,
+                        testInfo
+                    );
 
                     // Capture execution steps for context
-                    const excluded = new Set(['Pre Condition', 'Post Condition', 'Description', 'A11y']);
+                    const excluded = new Set([
+                        'Pre Condition',
+                        'Post Condition',
+                        'Description',
+                        'A11y',
+                    ]);
                     const contextSteps = (testInfo.annotations || [])
-                        .filter(a => !excluded.has(a.type))
-                        .map(a => a.description || '');
+                        .filter((a) => !excluded.has(a.type))
+                        .map((a) => a.description || '');
 
                     const nodeHtml = node.html || '';
                     const friendlySnippet = elementSelector; // Use full CSS selector path from Axe core
@@ -171,7 +196,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                         screenshot: screenshotName,
                         steps: contextSteps,
                         stepsJson: JSON.stringify(contextSteps),
-                        screenshotBase64: buffer.toString('base64')
+                        screenshotBase64: buffer.toString('base64'),
                     });
 
                     await overlay.unhighlightElement();
@@ -186,9 +211,10 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
             helpUrl: violation.helpUrl,
             help: violation.help,
             guideline: violation.tags[1] || 'N/A',
-            wcagRule: violation.tags.find(t => t.startsWith('wcag')) || violation.tags[1] || 'N/A',
+            wcagRule:
+                violation.tags.find((t) => t.startsWith('wcag')) || violation.tags[1] || 'N/A',
             total: targets.length || violation.nodes.length, // Fallback to node count if no screenshots
-            target: targets
+            target: targets,
         });
     }
 
@@ -205,7 +231,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
         minorColor: Severity.minor,
         adoOrganization: process.env.ADO_ORGANIZATION || '',
         adoProject: process.env.ADO_PROJECT || '',
-        timestamp: A11yTimeUtils.formatDate(new Date())
+        timestamp: A11yTimeUtils.formatDate(new Date()),
     };
 
     await overlay.addTestAttachment(testInfo, 'A11y', JSON.stringify(reportData));

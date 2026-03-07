@@ -5,7 +5,6 @@ import * as path from 'path';
  * Handles the rendering of HTML reports using static templates and JSON data injection.
  */
 export class A11yHtmlRenderer {
-
     /**
      * Renders a static HTML template by copying it and generating the accompanied data payload.
      * @param templateName The template file name in the templates folder.
@@ -13,7 +12,12 @@ export class A11yHtmlRenderer {
      * @param outputFolder The folder where the rendered file will be saved.
      * @param outputFileName The full path of the output file.
      */
-    async render(templateName: string, data: Record<string, unknown>, outputFolder: string, outputFileName: string) {
+    async render(
+        templateName: string,
+        data: Record<string, unknown>,
+        outputFolder: string,
+        outputFileName: string
+    ) {
         // Resolve path relative to this file (dist/A11yHtmlRenderer.js)
         const templatesDir = path.join(__dirname, 'templates');
         const templatePath = path.join(templatesDir, templateName);
@@ -41,8 +45,16 @@ export class A11yHtmlRenderer {
         const outCssPath = path.join(outputDir, 'global-report-styles.css');
         const outJsPath = path.join(outputDir, 'report-app.js');
 
-        try { if (fs.existsSync(cssPath)) fs.copyFileSync(cssPath, outCssPath); } catch (e) { console.error('Error copying CSS:', e); }
-        try { if (fs.existsSync(jsPath)) fs.copyFileSync(jsPath, outJsPath); } catch (e) { console.error('Error copying JS:', e); }
+        try {
+            if (fs.existsSync(cssPath)) fs.copyFileSync(cssPath, outCssPath);
+        } catch (e) {
+            console.error('Error copying CSS:', e);
+        }
+        try {
+            if (fs.existsSync(jsPath)) fs.copyFileSync(jsPath, outJsPath);
+        } catch (e) {
+            console.error('Error copying JS:', e);
+        }
     }
 
     /**
@@ -64,10 +76,7 @@ export class A11yHtmlRenderer {
             '\u001b[39m': '</span>',
         };
 
-        let result = text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+        let result = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         for (const [code, tag] of Object.entries(map)) {
             result = result.split(code).join(tag);

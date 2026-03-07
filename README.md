@@ -37,29 +37,29 @@ npm install snap-ally --save-dev
 Add `snap-ally` to your `playwright.config.ts`:
 
 ```typescript
-import { defineConfig } from "@playwright/test";
+import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  reporter: [
-    [
-      "snap-ally",
-      {
-        outputFolder: "a11y-report",
-        // Optional: Visual Customization
-        colors: {
-          critical: "#dc2626",
-          serious: "#ea580c",
-          moderate: "#f59e0b",
-          minor: "#0ea5e9",
-        },
-        // Optional: Azure DevOps Integration
-        ado: {
-          organization: "your-org",
-          project: "your-project",
-        },
-      },
+    reporter: [
+        [
+            'snap-ally',
+            {
+                outputFolder: 'a11y-report',
+                // Optional: Visual Customization
+                colors: {
+                    critical: '#dc2626',
+                    serious: '#ea580c',
+                    moderate: '#f59e0b',
+                    minor: '#0ea5e9',
+                },
+                // Optional: Azure DevOps Integration
+                ado: {
+                    organization: 'your-org',
+                    project: 'your-project',
+                },
+            },
+        ],
     ],
-  ],
 });
 ```
 
@@ -70,25 +70,25 @@ export default defineConfig({
 Import and use `scanA11y` within your Playwright tests:
 
 ```typescript
-import { test } from "@playwright/test";
-import { scanA11y } from "snap-ally";
+import { test } from '@playwright/test';
+import { scanA11y } from 'snap-ally';
 
-test("verify page accessibility", async ({ page }, testInfo) => {
-  await page.goto("https://example.com");
+test('verify page accessibility', async ({ page }, testInfo) => {
+    await page.goto('https://example.com');
 
-  // Basic scan
-  await scanA11y(page, testInfo);
+    // Basic scan
+    await scanA11y(page, testInfo);
 
-  // Advanced scan with configuration
-  await scanA11y(page, testInfo, {
-    verbose: true,      // Log results to terminal
-    consoleLog: true,   // Log results to browser console
-    pageKey: 'Homepage', // Custom name for the report file
-    tags: ['wcag2a', 'wcag2aa'], 
-    rules: {
-      'color-contrast': { enabled: false },
-    }
-  });
+    // Advanced scan with configuration
+    await scanA11y(page, testInfo, {
+        verbose: true, // Log results to terminal
+        consoleLog: true, // Log results to browser console
+        pageKey: 'Homepage', // Custom name for the report file
+        tags: ['wcag2a', 'wcag2aa'],
+        rules: {
+            'color-contrast': { enabled: false },
+        },
+    });
 });
 ```
 
@@ -108,14 +108,14 @@ test("verify page accessibility", async ({ page }, testInfo) => {
 
 ### `scanA11y` Options
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `include` | `string` | CSS selector to limit the scan to a specific element. |
-| `verbose` | `boolean` | **Terminal Logs**: Print violations to terminal. Defaults to `true`. |
-| `consoleLog` | `boolean` | **Browser Logs**: Print violations to browser console. Defaults to `true`. |
-| `rules` | `object` | Axe-core rule configuration. |
-| `tags` | `string[]` | List of Axe-core tags to run (e.g., `['wcag2aa']`). |
-| `pageKey` | `string` | Custom identifier for the report file name. |
+| Option       | Type       | Description                                                                |
+| ------------ | ---------- | -------------------------------------------------------------------------- |
+| `include`    | `string`   | CSS selector to limit the scan to a specific element.                      |
+| `verbose`    | `boolean`  | **Terminal Logs**: Print violations to terminal. Defaults to `true`.       |
+| `consoleLog` | `boolean`  | **Browser Logs**: Print violations to browser console. Defaults to `true`. |
+| `rules`      | `object`   | Axe-core rule configuration.                                               |
+| `tags`       | `string[]` | List of Axe-core tags to run (e.g., `['wcag2aa']`).                        |
+| `pageKey`    | `string`   | Custom identifier for the report file name.                                |
 
 ---
 
