@@ -13,7 +13,10 @@ export class A11yAuditOverlay {
     private readonly overlayRootId = 'a11y-audit-overlay-root';
     private auditAnnotations: AuditAnnotation[] = [];
 
-    constructor(protected page: Page, protected keyPage: string) { }
+    constructor(
+        protected page: Page,
+        protected keyPage: string
+    ) { }
 
     public reset() {
         this.auditAnnotations = [];
@@ -22,14 +25,15 @@ export class A11yAuditOverlay {
     /**
      * Shows a compact, modern banner at the bottom of the page describing the violation.
      */
-    async showViolationOverlay(violation: { id: string; help: string; }, color: string) {
+    async showViolationOverlay(violation: { id: string; help: string }, color: string) {
         await this.page.evaluate(
             ([v, color, rootId]) => {
                 let root = document.getElementById(rootId);
                 if (!root) {
                     root = document.createElement('div');
                     root.id = rootId;
-                    root.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483647;';
+                    root.style.cssText =
+                        'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483647;';
                     document.body.appendChild(root);
                     root.attachShadow({ mode: 'open' });
                 }
@@ -85,8 +89,11 @@ export class A11yAuditOverlay {
                     shadow.appendChild(container);
                 }
 
-                const alphaColor = color.includes('rgba') ? color :
-                    (color.includes('rgb') ? color.replace('rgb', 'rgba').replace(')', ', 0.85)') : color + 'E6');
+                const alphaColor = color.includes('rgba')
+                    ? color
+                    : color.includes('rgb')
+                        ? color.replace('rgb', 'rgba').replace(')', ', 0.85)')
+                        : color + 'E6';
                 container.style.backgroundColor = alphaColor;
 
                 container.innerHTML = `
@@ -99,7 +106,7 @@ export class A11yAuditOverlay {
                     </div>
                 `;
             },
-            [violation, color, this.overlayRootId] as [{ id: string, help: string }, string, string]
+            [violation, color, this.overlayRootId] as [{ id: string; help: string }, string, string]
         );
     }
 
@@ -119,7 +126,7 @@ export class A11yAuditOverlay {
     async addTestAttachment(testInfo: TestInfo, name: string, description: string) {
         await testInfo.attach(name, {
             contentType: 'application/json',
-            body: Buffer.from(description)
+            body: Buffer.from(description),
         });
     }
 
@@ -140,27 +147,29 @@ export class A11yAuditOverlay {
     }
 
     async highlightElement(selector: string, color: string) {
-        await this.page.evaluate(([sel, color, rootId]) => {
-            const target = document.querySelector(sel) as HTMLElement;
-            if (!target) return;
+        await this.page.evaluate(
+            ([sel, color, rootId]) => {
+                const target = document.querySelector(sel) as HTMLElement;
+                if (!target) return;
 
-            // Scroll FIRST to ensure accurate coordinates after scroll
-            target.scrollIntoView({ behavior: 'auto', block: 'center' });
+                // Scroll FIRST to ensure accurate coordinates after scroll
+                target.scrollIntoView({ behavior: 'auto', block: 'center' });
 
-            let root = document.getElementById(rootId);
-            if (!root) {
-                root = document.createElement('div');
-                root.id = rootId;
-                root.style.cssText = 'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483647;';
-                document.body.appendChild(root);
-                root.attachShadow({ mode: 'open' });
-            }
+                let root = document.getElementById(rootId);
+                if (!root) {
+                    root = document.createElement('div');
+                    root.id = rootId;
+                    root.style.cssText =
+                        'position: absolute; top: 0; left: 0; width: 0; height: 0; z-index: 2147483647;';
+                    document.body.appendChild(root);
+                    root.attachShadow({ mode: 'open' });
+                }
 
-            const shadow = root.shadowRoot!;
-            let highlight = shadow.getElementById('a11y-highlight');
-            if (!highlight) {
-                const style = document.createElement('style');
-                style.textContent = `
+                const shadow = root.shadowRoot!;
+                let highlight = shadow.getElementById('a11y-highlight');
+                if (!highlight) {
+                    const style = document.createElement('style');
+                    style.textContent = `
                     #a11y-highlight {
                         position: absolute;
                         pointer-events: none;
@@ -179,23 +188,28 @@ export class A11yAuditOverlay {
                         border: 2px solid var(--c);
                     }
                 `;
-                shadow.appendChild(style);
+                    shadow.appendChild(style);
 
-                highlight = document.createElement('div');
-                highlight.id = 'a11y-highlight';
-                highlight.innerHTML = '<div class="glow"></div>';
-                shadow.appendChild(highlight);
-            }
+                    highlight = document.createElement('div');
+                    highlight.id = 'a11y-highlight';
+                    highlight.innerHTML = '<div class="glow"></div>';
+                    shadow.appendChild(highlight);
+                }
 
-            const rect = target.getBoundingClientRect();
-            highlight.style.left = `${rect.left + window.scrollX - 4}px`;
-            highlight.style.top = `${rect.top + window.scrollY - 4}px`;
-            highlight.style.width = `${rect.width + 8}px`;
-            highlight.style.height = `${rect.height + 8}px`;
-            highlight.style.border = `3px solid ${color}`;
-            highlight.style.setProperty('--c', color);
-            highlight.style.setProperty('--c-alpha', color.includes('rgba') ? color.replace(/[\d.]+\)$/, '0.3)') : color + '4D');
-        }, [selector, color, this.overlayRootId] as [string, string, string]);
+                const rect = target.getBoundingClientRect();
+                highlight.style.left = `${rect.left + window.scrollX - 4}px`;
+                highlight.style.top = `${rect.top + window.scrollY - 4}px`;
+                highlight.style.width = `${rect.width + 8}px`;
+                highlight.style.height = `${rect.height + 8}px`;
+                highlight.style.border = `3px solid ${color}`;
+                highlight.style.setProperty('--c', color);
+                highlight.style.setProperty(
+                    '--c-alpha',
+                    color.includes('rgba') ? color.replace(/[\d.]+\)$/, '0.3)') : color + '4D'
+                );
+            },
+            [selector, color, this.overlayRootId] as [string, string, string]
+        );
     }
 
     /**

@@ -1,206 +1,295 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Snap Ally - Test Summary</title>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snap Ally - Test Summary</title>
+        <!-- Modern Typography and Core Styles -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-  <!-- Modern Typography and Core Styles -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        <!-- Snap Ally Shared Template Styles -->
+        <link rel="stylesheet" href="global-report-styles.css" />
+    </head>
 
-  <!-- Snap Ally Shared Template Styles -->
-  <link rel="stylesheet" href="global-report-styles.css">
-</head>
+    <body>
+        <header>
+            <a href="#" class="brand" style="cursor: default">
+                <div class="brand-icon">
+                    <span class="material-symbols-outlined" style="font-size: 22px"
+                        >fact_check</span
+                    >
+                </div>
+                <h1>Snap Ally Test Summary</h1>
+            </a>
+        </header>
 
-<body>
-  <header>
-    <a href="#" class="brand" style="cursor: default;">
-      <div class="brand-icon">
-        <span class="material-symbols-outlined" style="font-size: 22px;">fact_check</span>
-      </div>
-      <h1>Snap Ally Test Summary</h1>
-    </a>
-  </header>
-
-  <div class="container" id="report-summary-root" style="display: none;">
-
-    <!-- Hero Section -->
-    <div class="summary-hero">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
-          <h2 style="margin: 0; font-weight: 600; font-size: 1.4rem; color: var(--text-main);">
-            Test Execution Summary
-          </h2>
-          <div class="status-badge" id="summary-status-badge">
-            <span class="material-symbols-outlined" id="summary-status-icon" style="font-size: 16px;"></span>
-            <span id="summary-status-text"></span>
-          </div>
-        </div>
-      <div class="hero-right">
-        <div class="gen-date">Generated on: <span class="gen-date-val" id="summary-date"></span></div>
-        <div class="runtime-box">Total Runtime: <span class="runtime-val" id="summary-duration"></span></div>
-      </div>
-    </div>
-
-    <!-- Browser Tabs Container -->
-    <div class="tabs-container" id="summary-tabs-container">
-      <button class="tab-btn active" data-target="global">Global</button>
-      <!-- Browser tabs injected here -->
-    </div>
-    <template id="browser-tab-btn-template">
-      <button class="tab-btn"></button>
-    </template>
-
-    <!-- Global Tab Content -->
-    <div id="tab-global" class="tab-content active">
-
-      <!-- Global Success -->
-      <div class="success-verified-card" id="global-success-card" style="display: none;">
-        <div class="success-content-layout">
-          <div class="success-icon-container">
-            <span class="material-symbols-outlined" id="global-success-icon">check_circle</span>
-            <div class="icon-pulse"></div>
-          </div>
-          <div class="success-text-group">
-            <h3 class="success-hero-title" id="global-success-title">Compliance Verified</h3>
-            <p class="success-hero-desc" id="global-success-desc">Congratulations! No accessibility violations were detected across your audited application.</p>
-            <div class="success-badges">
-              <span class="success-msg-badge"><span class="material-symbols-outlined">verified</span> 0 Violations Found</span>
-              <span class="success-msg-badge"><span class="material-symbols-outlined">health_and_safety</span> 100% Compliant</span>
+        <div class="container" id="report-summary-root" style="display: none">
+            <!-- Hero Section -->
+            <div class="summary-hero">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px">
+                    <h2
+                        style="
+                            margin: 0;
+                            font-weight: 600;
+                            font-size: 1.4rem;
+                            color: var(--text-main);
+                        "
+                    >
+                        Test Execution Summary
+                    </h2>
+                    <div class="status-badge" id="summary-status-badge">
+                        <span
+                            class="material-symbols-outlined"
+                            id="summary-status-icon"
+                            style="font-size: 16px"
+                        ></span>
+                        <span id="summary-status-text"></span>
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <div class="gen-date">
+                        Generated on: <span class="gen-date-val" id="summary-date"></span>
+                    </div>
+                    <div class="runtime-box">
+                        Total Runtime: <span class="runtime-val" id="summary-duration"></span>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Global Errors -->
-      <div id="global-errors-container" style="display: none;">
-        <div class="metrics-grid" id="global-metrics-grid"></div>
-        <div class="chart-box">
-          <div class="chart-title">
-            Global Violation Distribution
-            <div class="chart-legend">
-              <span class="legend-item"><span class="legend-dot critical"></span> Critical</span>
-              <span class="legend-item"><span class="legend-dot serious"></span> Serious</span>
-              <span class="legend-item"><span class="legend-dot moderate"></span> Moderate</span>
-              <span class="legend-item"><span class="legend-dot minor"></span> Minor</span>
+            <!-- Browser Tabs Container -->
+            <div class="tabs-container" id="summary-tabs-container">
+                <button class="tab-btn active" data-target="global">Global</button>
+                <!-- Browser tabs injected here -->
             </div>
-          </div>
-          <div id="chart-global-violations"></div>
-        </div>
-      </div>
-    </div>
+            <template id="browser-tab-btn-template">
+                <button class="tab-btn"></button>
+            </template>
 
-    <!-- Browser Tab Content Container -->
-    <div id="browser-tabs-content"></div>
+            <!-- Global Tab Content -->
+            <div id="tab-global" class="tab-content active">
+                <!-- Global Success -->
+                <div class="success-verified-card" id="global-success-card" style="display: none">
+                    <div class="success-content-layout">
+                        <div class="success-icon-container">
+                            <span class="material-symbols-outlined" id="global-success-icon"
+                                >check_circle</span
+                            >
+                            <div class="icon-pulse"></div>
+                        </div>
+                        <div class="success-text-group">
+                            <h3 class="success-hero-title" id="global-success-title">
+                                Compliance Verified
+                            </h3>
+                            <p class="success-hero-desc" id="global-success-desc">
+                                Congratulations! No accessibility violations were detected across
+                                your audited application.
+                            </p>
+                            <div class="success-badges">
+                                <span class="success-msg-badge"
+                                    ><span class="material-symbols-outlined">verified</span> 0
+                                    Violations Found</span
+                                >
+                                <span class="success-msg-badge"
+                                    ><span class="material-symbols-outlined"
+                                        >health_and_safety</span
+                                    >
+                                    100% Compliant</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <template id="browser-tab-content-template">
-      <div class="tab-content">
-        <!-- Error State -->
-        <div class="browser-errors-container" style="display: none;">
-          <div class="metrics-grid browser-metrics-grid"></div>
-          <div class="chart-box">
-            <div class="chart-title">
-              <span class="browser-chart-title"></span> Violations by Rule
-              <div class="chart-legend">
-                <span class="legend-item"><span class="legend-dot critical"></span> Critical</span>
-                <span class="legend-item"><span class="legend-dot serious"></span> Serious</span>
-                <span class="legend-item"><span class="legend-dot moderate"></span> Moderate</span>
-                <span class="legend-item"><span class="legend-dot minor"></span> Minor</span>
-              </div>
+                <!-- Global Errors -->
+                <div id="global-errors-container" style="display: none">
+                    <div class="metrics-grid" id="global-metrics-grid"></div>
+                    <div class="chart-box">
+                        <div class="chart-title">
+                            Global Violation Distribution
+                            <div class="chart-legend">
+                                <span class="legend-item"
+                                    ><span class="legend-dot critical"></span> Critical</span
+                                >
+                                <span class="legend-item"
+                                    ><span class="legend-dot serious"></span> Serious</span
+                                >
+                                <span class="legend-item"
+                                    ><span class="legend-dot moderate"></span> Moderate</span
+                                >
+                                <span class="legend-item"
+                                    ><span class="legend-dot minor"></span> Minor</span
+                                >
+                            </div>
+                        </div>
+                        <div id="chart-global-violations"></div>
+                    </div>
+                </div>
             </div>
-            <div class="browser-chart-container"></div>
-          </div>
-        </div>
 
-        <!-- Success State -->
-        <div class="success-verified-card browser-success-container" style="display: none;">
-          <div class="success-content-layout">
-            <div class="success-icon-container">
-              <span class="material-symbols-outlined success-hero-icon">verified_user</span>
-              <div class="icon-pulse"></div>
+            <!-- Browser Tab Content Container -->
+            <div id="browser-tabs-content"></div>
+
+            <template id="browser-tab-content-template">
+                <div class="tab-content">
+                    <!-- Error State -->
+                    <div class="browser-errors-container" style="display: none">
+                        <div class="metrics-grid browser-metrics-grid"></div>
+                        <div class="chart-box">
+                            <div class="chart-title">
+                                <span class="browser-chart-title"></span> Violations by Rule
+                                <div class="chart-legend">
+                                    <span class="legend-item"
+                                        ><span class="legend-dot critical"></span> Critical</span
+                                    >
+                                    <span class="legend-item"
+                                        ><span class="legend-dot serious"></span> Serious</span
+                                    >
+                                    <span class="legend-item"
+                                        ><span class="legend-dot moderate"></span> Moderate</span
+                                    >
+                                    <span class="legend-item"
+                                        ><span class="legend-dot minor"></span> Minor</span
+                                    >
+                                </div>
+                            </div>
+                            <div class="browser-chart-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- Success State -->
+                    <div
+                        class="success-verified-card browser-success-container"
+                        style="display: none"
+                    >
+                        <div class="success-content-layout">
+                            <div class="success-icon-container">
+                                <span class="material-symbols-outlined success-hero-icon"
+                                    >verified_user</span
+                                >
+                                <div class="icon-pulse"></div>
+                            </div>
+                            <div class="success-text-group">
+                                <h3 class="success-hero-title browser-success-title">
+                                    Browser Compliant
+                                </h3>
+                                <p class="success-hero-desc">
+                                    Great job! No accessibility issues were found in this specific
+                                    browser environment.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template id="wcag-metric-template">
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-header">
+                            <span class="metric-rule"></span>
+                            <span class="metric-sev"></span>
+                        </div>
+                        <div class="metric-desc" style="display: none"></div>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-count"></div>
+                        <a target="_blank" class="btn-guide" style="display: none">
+                            <span class="material-symbols-outlined" style="font-size: 16px"
+                                >menu_book</span
+                            >
+                            Guide
+                        </a>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Test Suite Details Accordion -->
+            <div class="results-list" style="margin-top: 40px">
+                <h2
+                    style="
+                        font-family: 'Outfit', sans-serif;
+                        font-size: 1.25rem;
+                        margin-bottom: 24px;
+                        color: var(--text-main);
+                    "
+                >
+                    Test Suite Details
+                </h2>
+                <div id="accordion-container"></div>
             </div>
-            <div class="success-text-group">
-              <h3 class="success-hero-title browser-success-title">Browser Compliant</h3>
-              <p class="success-hero-desc">Great job! No accessibility issues were found in this specific browser environment.</p>
+
+            <template id="group-section-template">
+                <div class="group-section">
+                    <div class="group-header">
+                        <span class="group-title"></span>
+                        <span class="material-symbols-outlined group-toggle-icon">expand_more</span>
+                    </div>
+                    <div class="group-content"></div>
+                </div>
+            </template>
+
+            <template id="test-card-template">
+                <a class="test-card" data-browser="">
+                    <span class="material-symbols-outlined status-icon-small"></span>
+                    <div class="test-main-info">
+                        <div class="test-title-group">
+                            <span class="test-title"></span>
+                            <span class="browser-chip"></span>
+                        </div>
+                        <div class="test-meta">
+                            <span
+                                class="err-badge"
+                                style="
+                                    display: none;
+                                    background: #fee2e2;
+                                    color: #ef4444;
+                                    font-size: 0.7rem;
+                                    font-weight: 800;
+                                    padding: 2px 8px;
+                                    border-radius: 6px;
+                                "
+                            ></span>
+                            <div
+                                class="test-dur"
+                                style="
+                                    font-size: 0.8rem;
+                                    color: var(--text-muted);
+                                    font-weight: 700;
+                                "
+                            ></div>
+                        </div>
+                    </div>
+                </a>
+            </template>
+        </div>
+
+        <footer>
+            <div class="powered-by">Generated by <span class="badge-tool">Snap Ally</span></div>
+            <div>
+                <span style="opacity: 0.7">&copy; <span id="year"></span> Snap Ally</span>
             </div>
-          </div>
-        </div>
-      </div>
-    </template>
+        </footer>
 
-    <template id="wcag-metric-template">
-      <div class="metric-card">
-        <div>
-          <div class="metric-header">
-            <span class="metric-rule"></span>
-            <span class="metric-sev"></span>
-          </div>
-          <div class="metric-desc" style="display: none;"></div>
-        </div>
-        <div class="metric-footer">
-          <div class="metric-count"></div>
-          <a target="_blank" class="btn-guide" style="display: none;">
-            <span class="material-symbols-outlined" style="font-size: 16px;">menu_book</span> Guide
-          </a>
-        </div>
-      </div>
-    </template>
+        <!-- Scripts -->
+        <script>
+            document.getElementById('year').textContent = new Date().getFullYear();
+        </script>
 
-    <!-- Test Suite Details Accordion -->
-    <div class="results-list" style="margin-top: 40px;">
-      <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; margin-bottom: 24px; color: var(--text-main);">
-        Test Suite Details</h2>
-      <div id="accordion-container"></div>
-    </div>
+        <!-- Injected JSON Payload -->
+        <script src="data.js"></script>
 
-    <template id="group-section-template">
-      <div class="group-section">
-        <div class="group-header">
-          <span class="group-title"></span>
-          <span class="material-symbols-outlined group-toggle-icon">expand_more</span>
-        </div>
-        <div class="group-content"></div>
-      </div>
-    </template>
-
-    <template id="test-card-template">
-      <a class="test-card" data-browser="">
-        <span class="material-symbols-outlined status-icon-small"></span>
-        <div class="test-main-info">
-          <div class="test-title-group">
-            <span class="test-title"></span>
-            <span class="browser-chip"></span>
-          </div>
-          <div class="test-meta">
-            <span class="err-badge"
-              style="display: none; background: #fee2e2; color: #ef4444; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"></span>
-            <div class="test-dur" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;"></div>
-          </div>
-        </div>
-      </a>
-    </template>
-
-  </div>
-
-  <footer>
-    <div class="powered-by">Generated by <span class="badge-tool">Snap Ally</span></div>
-    <div><span style="opacity: 0.7;">&copy; <span id="year"></span> Snap Ally</span></div>
-  </footer>
-
-  <!-- Scripts -->
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-
-  <!-- Injected JSON Payload -->
-  <script src="data.js"></script>
-
-  <!-- Report Logic -->
-  <script src="report-app.js"></script>
-</body>
-
+        <!-- Report Logic -->
+        <script src="report-app.js"></script>
+    </body>
 </html>

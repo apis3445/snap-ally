@@ -6,7 +6,6 @@ import { TestResult } from '@playwright/test/reporter';
  * Utilities for managing and copying report assets like videos and screenshots.
  */
 export class A11yReportAssets {
-
     /**
      * Copies a file from source to a destination folder.
      */
@@ -32,8 +31,8 @@ export class A11yReportAssets {
      */
     async copyTestVideo(result: TestResult, destFolder: string): Promise<string> {
         // More flexible matching for video attachments
-        const videoAttachments = result.attachments.filter(a =>
-            a.name === 'video' || (a.contentType || '').startsWith('video/')
+        const videoAttachments = result.attachments.filter(
+            (a) => a.name === 'video' || (a.contentType || '').startsWith('video/')
         );
 
         let bestVideo: string | null = null;
@@ -53,11 +52,11 @@ export class A11yReportAssets {
                             isReady = true;
                             break;
                         }
-                    } catch (e) {
+                    } catch {
                         // statSync might fail if file is temporarily locked
                     }
                 }
-                await new Promise(r => setTimeout(r, 200));
+                await new Promise((r) => setTimeout(r, 200));
                 attempts++;
             }
 
@@ -72,7 +71,9 @@ export class A11yReportAssets {
                     console.error(`[SnapAlly] Error checking video stats: ${err}`);
                 }
             } else {
-                console.warn(`[SnapAlly] Video attachment found but file is missing or empty after retry: ${attachment.path}`);
+                console.warn(
+                    `[SnapAlly] Video attachment found but file is missing or empty after retry: ${attachment.path}`
+                );
             }
         }
 
@@ -92,27 +93,36 @@ export class A11yReportAssets {
      */
     copyScreenshots(result: TestResult, destFolder: string): string[] {
         return result.attachments
-            .filter(a => a.name === 'screenshot' || (a.contentType || '').startsWith('image/'))
-            .map(a => {
+            .filter((a) => a.name === 'screenshot' || (a.contentType || '').startsWith('image/'))
+            .map((a) => {
                 if (a.path) {
                     return this.copyToFolder(destFolder, a.path);
                 } else if (a.body) {
                     const timestamp = Date.now();
-                    const name = a.name === 'screenshot' ? `screenshot-${timestamp}.png` : (a.name.endsWith('.png') ? a.name : `${a.name}.png`);
+                    const name =
+                        a.name === 'screenshot'
+                            ? `screenshot-${timestamp}.png`
+                            : a.name.endsWith('.png')
+                                ? a.name
+                                : `${a.name}.png`;
                     return this.writeBuffer(destFolder, name, a.body);
                 }
                 return '';
             })
-            .filter(path => path !== '');
+            .filter((path) => path !== '');
     }
 
     /**
      * Copies all PNG attachments to the report folder and returns their new names.
      */
-    copyPngAttachments(result: TestResult, destFolder: string): { path: string, name: string }[] {
+    copyPngAttachments(result: TestResult, destFolder: string): { path: string; name: string }[] {
         return result.attachments
-            .filter(a => (a.name.endsWith('.png') || (a.contentType || '') === 'image/png') && a.name !== 'screenshot')
-            .map(a => {
+            .filter(
+                (a) =>
+                    (a.name.endsWith('.png') || (a.contentType || '') === 'image/png') &&
+                    a.name !== 'screenshot'
+            )
+            .map((a) => {
                 let name = '';
                 if (a.path) {
                     name = this.copyToFolder(destFolder, a.path, a.name);
@@ -122,20 +132,26 @@ export class A11yReportAssets {
                 }
                 return name ? { path: name, name: a.name } : null;
             })
-            .filter((item): item is { path: string, name: string } => item !== null);
+            .filter((item): item is { path: string; name: string } => item !== null);
     }
 
     /**
      * Copies all other attachments (traces, logs, etc.) to the report folder.
      */
-    copyAllOtherAttachments(result: TestResult, destFolder: string): { path: string, name: string }[] {
+    copyAllOtherAttachments(
+        result: TestResult,
+        destFolder: string
+    ): { path: string; name: string }[] {
         const excludedNames = ['screenshot', 'video', 'A11y'];
         return result.attachments
-            .filter(a => !excludedNames.includes(a.name) &&
-                !a.name.endsWith('.png') &&
-                !(a.contentType || '').startsWith('image/') &&
-                !(a.contentType || '').startsWith('video/'))
-            .map(a => {
+            .filter(
+                (a) =>
+                    !excludedNames.includes(a.name) &&
+                    !a.name.endsWith('.png') &&
+                    !(a.contentType || '').startsWith('image/') &&
+                    !(a.contentType || '').startsWith('video/')
+            )
+            .map((a) => {
                 let name = '';
                 if (a.path) {
                     name = this.copyToFolder(destFolder, a.path, a.name);
@@ -144,7 +160,7 @@ export class A11yReportAssets {
                 }
                 return name ? { path: name, name: a.name } : null;
             })
-            .filter((item): item is { path: string, name: string } => item !== null);
+            .filter((item): item is { path: string; name: string } => item !== null);
     }
 
     /**

@@ -60,7 +60,7 @@ class SnapAllyReporter implements Reporter {
         wcagErrors: {},
         totalA11yErrorCount: 0,
         browserSummaries: {},
-        date: ''
+        date: '',
     };
 
     // Track async tasks to ensure they finish before onEnd
@@ -91,47 +91,60 @@ class SnapAllyReporter implements Reporter {
             this.executionSummary.groupedResults[fileGroup] = [];
         }
 
-        const tags = test.tags.map(t => t.replace('@', ''));
+        const tags = test.tags.map((t) => t.replace('@', ''));
         const statusIcon = TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
-        const projectUse = test.parent.project()?.use as any || {};
-        const browser = test.parent.project()?.name || projectUse.browserName || projectUse.defaultBrowserType || 'chromium';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const projectUse = (test.parent.project()?.use as any) || {};
+        const browser =
+            test.parent.project()?.name ||
+            projectUse.browserName ||
+            projectUse.defaultBrowserType ||
+            'chromium';
 
-        const descAnnotation = test.annotations.find(a => a.type === 'Description');
+        const descAnnotation = test.annotations.find((a) => a.type === 'Description');
         const description = descAnnotation?.description || 'No Description';
 
         // Prepare steps from actual test.step calls instead of just annotations
-        const steps = result.steps
-            .filter(s => s.category === 'test.step')
-            .map(s => s.title);
+        const steps = result.steps.filter((s) => s.category === 'test.step').map((s) => s.title);
 
         const preConditions = test.annotations
-            .filter(a => a.type === 'Pre Condition')
-            .map(a => a.description || '');
+            .filter((a) => a.type === 'Pre Condition')
+            .map((a) => a.description || '');
         const postConditions = test.annotations
-            .filter(a => a.type === 'Post Condition')
-            .map(a => a.description || '');
+            .filter((a) => a.type === 'Post Condition')
+            .map((a) => a.description || '');
 
         const video = await this.assetsManager.copyTestVideo(result, testResultsFolder);
         const screenshots = this.assetsManager.copyScreenshots(result, testResultsFolder);
         const pngAttachments = this.assetsManager.copyPngAttachments(result, testResultsFolder);
-        const otherAttachments = this.assetsManager.copyAllOtherAttachments(result, testResultsFolder);
+        const otherAttachments = this.assetsManager.copyAllOtherAttachments(
+            result,
+            testResultsFolder
+        );
         const allAttachments = [...pngAttachments, ...otherAttachments];
 
-        console.log(`[SnapAlly Debug] Test "${test.title}" ended. Status: ${result.status}. Video: ${video ? 'Created' : 'Missing'}`);
-        console.log(`[SnapAlly Debug] Raw Attachments: ${result.attachments.map(a => `${a.name} (${a.path ? 'file' : 'body'})`).join(', ')}`);
+        console.log(
+            `[SnapAlly Debug] Test "${test.title}" ended. Status: ${result.status}. Video: ${video ? 'Created' : 'Missing'}`
+        );
+        console.log(
+            `[SnapAlly Debug] Raw Attachments: ${result.attachments.map((a) => `${a.name} (${a.path ? 'file' : 'body'})`).join(', ')}`
+        );
 
-        const errorLogs = (result.errors || []).map(err => {
-            const fullMsg = err.stack ? `${err.message}\n${err.stack}` : (err.message || 'Error occurred');
-            return this.renderer.ansiToHtml(fullMsg);
-        }) || [];
+        const errorLogs =
+            (result.errors || []).map((err) => {
+                const fullMsg = err.stack
+                    ? `${err.message}\n${err.stack}`
+                    : err.message || 'Error occurred';
+                return this.renderer.ansiToHtml(fullMsg);
+            }) || [];
 
         // --- 2. Accessibility Reporting (Iterate over all A11y sources: attachments and annotations) ---
-        const a11yAttachments = (result.attachments || []).filter(a => a.name === 'A11y');
-        const a11yAnnotations = (test.annotations || []).filter(a => a.type === 'A11y');
+        const a11yAttachments = (result.attachments || []).filter((a) => a.name === 'A11y');
+        const a11yAnnotations = (test.annotations || []).filter((a) => a.type === 'A11y');
 
         const a11yDataSources = [
-            ...a11yAttachments.map((a: any) => ({ type: 'attachment', data: a })),
-            ...a11yAnnotations.map((a: any) => ({ type: 'annotation', data: a }))
+            ...a11yAttachments.map((a) => ({ type: 'attachment', data: a })),
+            ...a11yAnnotations.map((a) => ({ type: 'annotation', data: a })),
         ];
 
         if (a11yDataSources.length === 0) {
@@ -149,7 +162,7 @@ class SnapAllyReporter implements Reporter {
 
             try {
                 if (source.type === 'attachment') {
-                    const attach = source.data as { name: string, body?: Buffer, path?: string };
+                    const attach = source.data as { name: string; body?: Buffer; path?: string };
                     if (attach.body) {
                         reportData = JSON.parse(attach.body.toString());
                     } else if (attach.path && fs.existsSync(attach.path)) {
@@ -158,12 +171,16 @@ class SnapAllyReporter implements Reporter {
                         continue;
                     }
                 } else {
-                    const annot = source.data as { type: string, description?: string };
+                    const annot = source.data as { type: string; description?: string };
                     reportData = JSON.parse(annot.description || '{}');
                 }
             } catch (e) {
                 console.error(`[SnapAlly] Failed to parse A11y ${source.type}: ${e}`);
-                errorLogs.push(this.renderer.ansiToHtml(`[SnapAlly] Internal error parsing accessibility data from ${source.type}: ${e}`));
+                errorLogs.push(
+                    this.renderer.ansiToHtml(
+                        `[SnapAlly] Internal error parsing accessibility data from ${source.type}: ${e}`
+                    )
+                );
                 continue;
             }
 
@@ -182,9 +199,10 @@ class SnapAllyReporter implements Reporter {
                     .toLowerCase();
 
                 if (sanitizedKey) {
-                    a11yReportName = a11yDataSources.length > 1
-                        ? `${sanitizedKey}-${index + 1}.html`
-                        : `${sanitizedKey}.html`;
+                    a11yReportName =
+                        a11yDataSources.length > 1
+                            ? `${sanitizedKey}-${index + 1}.html`
+                            : `${sanitizedKey}.html`;
                 }
             }
 
@@ -198,7 +216,8 @@ class SnapAllyReporter implements Reporter {
             reportData.minorColor = this.options.colors?.minor || '#0891b2';
 
             if (this.options.ado) {
-                reportData.adoOrganization = this.options.ado.organization || reportData.adoOrganization;
+                reportData.adoOrganization =
+                    this.options.ado.organization || reportData.adoOrganization;
                 reportData.adoProject = this.options.ado.project || reportData.adoProject;
             }
 
@@ -206,10 +225,10 @@ class SnapAllyReporter implements Reporter {
             if (video) reportData.video = video;
 
             // Backfill steps from actual test.step calls if annotations were empty
-            const filteredSteps = steps.filter(s => !s.includes('Capture A11y screenshot'));
+            const filteredSteps = steps.filter((s) => !s.includes('Capture A11y screenshot'));
             if (filteredSteps.length > 0) {
-                reportData.a11yErrors.forEach(err => {
-                    err.target.forEach(t => {
+                reportData.a11yErrors.forEach((err) => {
+                    err.target.forEach((t) => {
                         if (!t.steps || t.steps.length === 0) {
                             t.steps = filteredSteps;
                             t.stepsJson = JSON.stringify(filteredSteps);
@@ -219,7 +238,12 @@ class SnapAllyReporter implements Reporter {
             }
 
             const auditFile = path.join(testResultsFolder, a11yReportName);
-            await this.renderer.render('accessibility-report.html', { data: reportData, folderTest: testResultsFolder }, testResultsFolder, auditFile);
+            await this.renderer.render(
+                'accessibility-report.html',
+                { data: reportData, folderTest: testResultsFolder },
+                testResultsFolder,
+                auditFile
+            );
 
             // Capture the first page URL for the testStats if not already set
             if (reportData.pageUrl && !testStatsPageUrl) {
@@ -239,14 +263,17 @@ class SnapAllyReporter implements Reporter {
                     totalSkipped: 0,
                     groupedResults: {},
                     wcagErrors: {},
-                    totalA11yErrorCount: 0
+                    totalA11yErrorCount: 0,
                 };
             }
             const bSummary = this.executionSummary.browserSummaries![browser];
 
             if (reportData.a11yErrors && reportData.a11yErrors.length > 0) {
                 // Aggregate counts
-                const scanErrorCount = reportData.a11yErrors.reduce((sum: number, err: A11yError) => sum + (err.total || 0), 0);
+                const scanErrorCount = reportData.a11yErrors.reduce(
+                    (sum: number, err: A11yError) => sum + (err.total || 0),
+                    0
+                );
                 a11yErrorCount += scanErrorCount;
 
                 aggregatedA11yErrors.push(...reportData.a11yErrors);
@@ -254,16 +281,16 @@ class SnapAllyReporter implements Reporter {
                 reportData.a11yErrors.forEach((err: A11yError) => {
                     const rule = err.id;
 
-                    // Local Browser aggregation 
+                    // Local Browser aggregation
                     if (!bSummary.wcagErrors[rule]) {
                         bSummary.wcagErrors[rule] = {
                             count: 0,
                             severity: err.severity,
                             helpUrl: err.helpUrl,
-                            description: err.description
+                            description: err.description,
                         };
                     }
-                    bSummary.wcagErrors[rule].count += (err.total || 0);
+                    bSummary.wcagErrors[rule].count += err.total || 0;
 
                     // Global aggregation (always add to ensure summary is not empty)
                     if (!this.executionSummary.wcagErrors[rule]) {
@@ -271,10 +298,10 @@ class SnapAllyReporter implements Reporter {
                             count: 0,
                             severity: err.severity,
                             helpUrl: err.helpUrl,
-                            description: err.description
+                            description: err.description,
                         };
                     }
-                    this.executionSummary.wcagErrors[rule].count += (err.total || 0);
+                    this.executionSummary.wcagErrors[rule].count += err.total || 0;
                 });
 
                 // Update total error counts
@@ -283,25 +310,37 @@ class SnapAllyReporter implements Reporter {
             }
         }
 
-
         // --- 4. Final Aggregation and Test Stats ---
         // Update browser summary counts (always, even if no a11y scan occurred)
         if (!this.executionSummary.browserSummaries![browser]) {
             this.executionSummary.browserSummaries![browser] = {
-                duration: '0s', status: '', statusIcon: '', total: 0,
-                totalFailed: 0, totalFlaky: 0, totalPassed: 0, totalSkipped: 0,
-                groupedResults: {}, wcagErrors: {}, totalA11yErrorCount: 0
+                duration: '0s',
+                status: '',
+                statusIcon: '',
+                total: 0,
+                totalFailed: 0,
+                totalFlaky: 0,
+                totalPassed: 0,
+                totalSkipped: 0,
+                groupedResults: {},
+                wcagErrors: {},
+                totalA11yErrorCount: 0,
             };
         }
 
         const bSummary = this.executionSummary.browserSummaries![browser];
         bSummary.total++;
         switch (result.status) {
-            case 'passed': bSummary.totalPassed++; break;
-            case 'failed': bSummary.totalFailed++; break;
-            case 'skipped': bSummary.totalSkipped++; break;
+            case 'passed':
+                bSummary.totalPassed++;
+                break;
+            case 'failed':
+                bSummary.totalFailed++;
+                break;
+            case 'skipped':
+                bSummary.totalSkipped++;
+                break;
         }
-
 
         const executionReportName = `execution-${sanitizedTitle}.html`;
         const testStats: TestResults = {
@@ -328,7 +367,7 @@ class SnapAllyReporter implements Reporter {
             a11yReportPath,
             a11yErrorCount,
             a11yErrors: aggregatedA11yErrors,
-            colors: this.options.colors
+            colors: this.options.colors,
         };
 
         this.executionSummary.groupedResults[fileGroup].push(testStats);
@@ -338,9 +377,15 @@ class SnapAllyReporter implements Reporter {
         if (isFlaky) this.executionSummary.totalFlaky++;
 
         switch (result.status) {
-            case 'passed': this.executionSummary.totalPassed++; break;
-            case 'failed': this.executionSummary.totalFailed++; break;
-            case 'skipped': this.executionSummary.totalSkipped++; break;
+            case 'passed':
+                this.executionSummary.totalPassed++;
+                break;
+            case 'failed':
+                this.executionSummary.totalFailed++;
+                break;
+            case 'skipped':
+                this.executionSummary.totalSkipped++;
+                break;
         }
         this.executionSummary.total++;
 
@@ -349,12 +394,17 @@ class SnapAllyReporter implements Reporter {
             critical: this.options.colors?.critical || '#c92a2a',
             serious: this.options.colors?.serious || '#e67700',
             moderate: this.options.colors?.moderate || '#ca8a04',
-            minor: this.options.colors?.minor || '#0891b2'
+            minor: this.options.colors?.minor || '#0891b2',
         };
 
         // Render Step Report
         const indexFile = path.join(testResultsFolder, `execution-${sanitizedTitle}.html`);
-        await this.renderer.render('test-execution-report.html', { ...testStats, colors }, testResultsFolder, indexFile);
+        await this.renderer.render(
+            'test-execution-report.html',
+            { ...testStats, colors },
+            testResultsFolder,
+            indexFile
+        );
     }
 
     async onEnd(result: FullResult) {
@@ -364,17 +414,23 @@ class SnapAllyReporter implements Reporter {
         const summaryFile = path.join(this.outputFolder, 'summary.html');
         this.executionSummary.duration = A11yTimeUtils.formatDuration(result.duration);
         this.executionSummary.status = result.status;
-        this.executionSummary.statusIcon = TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
+        this.executionSummary.statusIcon =
+            TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
         this.executionSummary.date = A11yTimeUtils.formatDate(new Date());
 
         const colors = {
             critical: this.options.colors?.critical || '#c92a2a',
             serious: this.options.colors?.serious || '#e67700',
             moderate: this.options.colors?.moderate || '#ca8a04',
-            minor: this.options.colors?.minor || '#0891b2'
+            minor: this.options.colors?.minor || '#0891b2',
         };
 
-        await this.renderer.render('execution-summary.html', { ...this.executionSummary, colors }, this.outputFolder, summaryFile);
+        await this.renderer.render(
+            'execution-summary.html',
+            { ...this.executionSummary, colors },
+            this.outputFolder,
+            summaryFile
+        );
 
         console.log(`\n[SnapAlly] Reports generated in: ${path.resolve(this.outputFolder)}`);
     }
