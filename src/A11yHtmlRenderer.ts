@@ -32,12 +32,22 @@ export class A11yHtmlRenderer {
             fs.mkdirSync(outputFolder, { recursive: true });
         }
 
-        // 1. Copy the pure HTML template to the output location
-        fs.copyFileSync(templatePath, outputFileName);
+        // Derive a unique data filename from the HTML filename to avoid collisions
+        // when multiple reports (e.g. accessibility + execution) share the same folder.
+        const htmlBaseName = path.basename(outputFileName, '.html');
+        const dataJsName = `data-${htmlBaseName}.js`;
 
-        // 2. Wrap the report data in a JS variable and write data.js next to the HTML file
+        // 1. Copy the HTML template and patch the data.js reference to the unique name
+        let templateHtml = fs.readFileSync(templatePath, 'utf8');
+        templateHtml = templateHtml.replace(
+            /(<script\s+src=")data\.js(")/,
+            `$1${dataJsName}$2`
+        );
+        fs.writeFileSync(outputFileName, templateHtml, 'utf8');
+
+        // 2. Wrap the report data in a JS variable and write the per-report data file
         const outputDir = path.dirname(outputFileName);
-        const dataJsPath = path.join(outputDir, 'data.js');
+        const dataJsPath = path.join(outputDir, dataJsName);
         const jsContent = `window.snapAllyData = ${JSON.stringify(data)};`;
         fs.writeFileSync(dataJsPath, jsContent, 'utf8');
 
