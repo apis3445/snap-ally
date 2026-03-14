@@ -12,7 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Set up custom severity colors if provided
-    applyCustomColors(data);
+    // Unwrap nested data format used by accessibility reports (e.g. { data: reportData })
+    const effective = data.data || data;
+    applyCustomColors(effective);
 
     // Determine which template we are on based on root containers
     if (document.getElementById('report-summary-root')) {
@@ -530,7 +532,7 @@ function renderAccessibilityReport(injectedData) {
                 // generateAdoPayload binding — encode steps as JSON for safe transport
                 const safeSnippet = escapeHtml(snippetText);
                 const wcag = escapeHtml(v.wcagRule || (v.tags ? v.tags.join(', ') : ''));
-                const safeStepsJson = escapeHtml(JSON.stringify(stepsArray));
+                const safeStepsJson = encodeURIComponent(JSON.stringify(stepsArray));
                 btn.setAttribute(
                     'onclick',
                     `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}', '${safeStepsJson}')`
@@ -767,7 +769,7 @@ window.generateAdoPayload = function (
     let reproSteps = [];
     if (stepsJson) {
         try {
-            reproSteps = JSON.parse(stepsJson);
+            reproSteps = JSON.parse(decodeURIComponent(stepsJson));
         } catch {
             reproSteps = [];
         }
