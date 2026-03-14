@@ -7,6 +7,19 @@ A powerful, developer-friendly Playwright reporter for **Accessibility testing**
 
 ---
 
+## 🤔 Why the name "Snap-Ally"?
+
+- **Snap**: Like a snapshot, it provides an instant picture of a website's accessibility state at the moment the tests are executed.
+- **Ally**: It resembles **a11y** (the abbreviation for accessibility) and serves as an ally that allows you to create bugs in Azure DevOps more easily.
+
+## 💡 Motivation
+
+I have seen closely how much people with disabilities struggle with something as fundamental as finding a job.
+
+I believe that with relatively simple changes in HTML, good color contrast, among other things, systems should work and help all people equally. Since about 15% of the world's population lives with some form of disability.
+
+---
+
 ## 📺 Demo
 
 **[▶️ Watch the Demo Video](https://www.loom.com/share/853c04f1f76242a699e8f82e54733007)**
