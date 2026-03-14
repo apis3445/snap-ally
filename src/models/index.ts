@@ -2,7 +2,7 @@ export interface ReportData {
     pageKey: string;
     pageUrl?: string;
     accessibilityScore: number;
-    video: string;
+    video?: string;
     a11yErrors: A11yError[];
     criticalColor: string;
     seriousColor: string;
@@ -10,6 +10,7 @@ export interface ReportData {
     minorColor: string;
     adoOrganization?: string;
     adoProject?: string;
+    adoAreaPath?: string;
     adoPat?: string;
     timestamp?: string;
 }

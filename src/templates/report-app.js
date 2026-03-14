@@ -462,6 +462,12 @@ function renderAccessibilityReport(injectedData) {
         if (failedCountEl) failedCountEl.textContent = failedCount;
     }
 
+    // Set default area path if provided in data
+    const areaInput = document.getElementById('bugAreaInput');
+    if (areaInput && data.adoAreaPath) {
+        areaInput.value = data.adoAreaPath;
+    }
+
     // Render video section if exists
     if (videoPath) {
         document.getElementById('a11y-video-card').style.display = 'block';
@@ -894,10 +900,15 @@ async function submitFinalBug() {
     let videoUrl = null;
     if (videoPath) {
         try {
-            const videoBlob = await fetch(videoPath).then((res) => res.blob());
-            videoUrl = await uploadAttachment(videoBlob, 'session-recording.webm');
+            const res = await fetch(videoPath);
+            if (res.ok) {
+                const videoBlob = await res.blob();
+                videoUrl = await uploadAttachment(videoBlob, 'session-recording.webm');
+            } else {
+                console.warn(`[SnapAlly] Video not found or access denied: ${videoPath}. Skipping video upload.`);
+            }
         } catch (e) {
-            console.error('Failed to video upload', e);
+            console.warn(`[SnapAlly] Failed to load video: ${e.message}. Skipping video upload.`);
         }
     }
 
@@ -921,7 +932,7 @@ async function submitFinalBug() {
             value: `Found at URL / Resource: <a href="${safePageKey}">${safePageKey}</a>`,
         },
         { op: 'add', path: '/fields/Microsoft.VSTS.Common.Priority', value: priority },
-        { op: 'add', path: '/fields/System.AreaPath', value: `${proj}\\\\${area}` },
+        { op: 'add', path: '/fields/System.AreaPath', value: area.startsWith(proj) ? area : `${proj}\\${area}` },
         { op: 'add', path: '/fields/System.Tags', value: 'A11y;SnapAlly;UI-Test' },
     ];
 

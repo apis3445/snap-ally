@@ -33,6 +33,7 @@ export interface AccessibilityReporterOptions {
     ado?: {
         organization?: string;
         project?: string;
+        areaPath?: string;
     };
 }
 
@@ -273,9 +274,9 @@ class SnapAllyReporter implements Reporter {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const projectUse = (test.parent.project()?.use as any) || {};
         return (
-            test.parent.project()?.name ||
-            projectUse.browserName ||
             projectUse.defaultBrowserType ||
+            projectUse.browserName ||
+            test.parent.project()?.name ||
             'chromium'
         );
     }
@@ -431,6 +432,9 @@ class SnapAllyReporter implements Reporter {
             reportData.adoOrganization =
                 this.options.ado.organization || reportData.adoOrganization;
             reportData.adoProject = this.options.ado.project || reportData.adoProject;
+            if (this.options.ado.areaPath) {
+                reportData.adoAreaPath = this.options.ado.areaPath;
+            }
         }
 
         if (video) {
