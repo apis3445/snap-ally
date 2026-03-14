@@ -1,3 +1,8 @@
+## 2026-03-14
+
+### Changed
+- Adjusted Playwright imports to prevent duplicate module loading during test/config evaluation.
+
 ## 2026-03-13
 
 ### Changed

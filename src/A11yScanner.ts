@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { Page, Locator, expect, TestInfo } from '@playwright/test';
+import type { Page, Locator, TestInfo } from '@playwright/test';
 import { A11yAuditOverlay } from './A11yAuditOverlay';
 import { A11yError, ReportData, Target, Severity } from './models';
 import { A11yTimeUtils } from './A11yTimeUtils';
@@ -133,6 +133,9 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
     }
 
     // Fail the test if violations found (softly)
+    // Dynamically require to avoid eager loading @playwright/test during config evaluation
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { expect } = require('@playwright/test');
     expect
         .soft(violationCount, `Accessibility audit failed with ${violationCount} violations.`)
         .toBe(0);
