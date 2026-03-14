@@ -880,7 +880,7 @@ async function submitFinalBug() {
 
     const title = document.getElementById('bugTitleInput').value;
     const severity = document.getElementById('bugSeverityInput').value;
-    const area = document.getElementById('bugAreaInput').value;
+    const area = document.getElementById('bugAreaInput').value.replace(/\\+/g, '\\');
 
     let screenshotUrl = null;
     if (screenshotBase64) {

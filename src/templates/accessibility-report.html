@@ -117,11 +117,18 @@
 
             <!-- Success State -->
             <div class="success-verified-card" id="a11y-success-card" style="display: none">
-                <span class="material-symbols-outlined success-hero-icon">check_circle</span>
-                <h3 class="success-hero-title">Compliance Verified</h3>
-                <p class="success-hero-desc">
-                    Congratulations! This page passed all automated accessibility checks.
-                </p>
+                <div class="success-content-layout">
+                    <div class="success-icon-container">
+                        <span class="material-symbols-outlined">verified_user</span>
+                        <div class="icon-pulse"></div>
+                    </div>
+                    <div class="success-text-group">
+                        <h3 class="success-hero-title">Compliance Verified</h3>
+                        <p class="success-hero-desc">
+                            Congratulations! This page passed all automated accessibility checks.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <!-- Violations Container -->
@@ -315,7 +322,7 @@
                                         type="text"
                                         id="bugAreaInput"
                                         class="ado-form-input"
-                                        placeholder="Project\\Area"
+                                        placeholder="Project\Area"
                                     />
                                 </div>
                             </div>

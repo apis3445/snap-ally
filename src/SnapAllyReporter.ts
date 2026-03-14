@@ -271,12 +271,14 @@ class SnapAllyReporter implements Reporter {
 
     /** Determines the browser name for the current test. */
     private resolveBrowser(test: TestCase): string {
+        const project = test.parent.project();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const projectUse = (test.parent.project()?.use as any) || {};
+        const projectUse = (project?.use as any) || {};
+
         return (
-            projectUse.defaultBrowserType ||
+            project?.name ||
             projectUse.browserName ||
-            test.parent.project()?.name ||
+            projectUse.defaultBrowserType ||
             'chromium'
         );
     }
