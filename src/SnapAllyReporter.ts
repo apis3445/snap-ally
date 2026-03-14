@@ -6,12 +6,17 @@ import { A11yTimeUtils } from './A11yTimeUtils';
 import * as path from 'path';
 import * as fs from 'fs';
 
+// ────────────────────────────────────────────────────────────────────────────
+//  Public options interface
+// ────────────────────────────────────────────────────────────────────────────
+
 export interface AccessibilityReporterOptions {
     /**
      * Folder where the reports will be generated.
      * @default "steps-report"
      */
     outputFolder?: string;
+
     /**
      * Custom colors for violation severities in the report.
      */
@@ -21,6 +26,7 @@ export interface AccessibilityReporterOptions {
         moderate?: string;
         minor?: string;
     };
+
     /**
      * Azure DevOps integration options.
      */
@@ -30,24 +36,64 @@ export interface AccessibilityReporterOptions {
     };
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+//  Internal types
+// ────────────────────────────────────────────────────────────────────────────
+
+/** Resolved severity color palette (no more optional chaining everywhere). */
+interface ResolvedColors {
+    critical: string;
+    serious: string;
+    moderate: string;
+    minor: string;
+}
+
+/** Default severity colors used when the user doesn't override them. */
+const DEFAULT_COLORS: Readonly<ResolvedColors> = {
+    critical: '#c92a2a',
+    serious: '#e67700',
+    moderate: '#ca8a04',
+    minor: '#0891b2',
+};
+
+/** Union of the two shapes that can carry A11y data. */
+type A11yDataSource =
+    | { type: 'attachment'; data: { name: string; body?: Buffer; path?: string } }
+    | { type: 'annotation'; data: { type: string; description?: string } };
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Reporter
+// ────────────────────────────────────────────────────────────────────────────
+
 /**
  * Playwright reporter for accessibility audits and test steps.
- * Generates an execution summary and detailed reports per test.
+ *
+ * Generates:
+ * - A per-test execution report (steps, video, screenshots, errors)
+ * - A per-scan accessibility report (violations, evidence, ADO integration)
+ * - A global execution summary with per-browser breakdowns
  */
 class SnapAllyReporter implements Reporter {
-    private testIndex = 0;
-    private outputFolder: string;
-    private assetsManager = new A11yReportAssets();
-    private renderer = new A11yHtmlRenderer();
-    private options: AccessibilityReporterOptions;
+    private readonly outputFolder: string;
+    private readonly assetsManager = new A11yReportAssets();
+    private readonly renderer = new A11yHtmlRenderer();
+    private readonly options: AccessibilityReporterOptions;
+    private readonly colors: ResolvedColors;
+
     private projectRoot = 'tests';
 
-    printsToStdio() {
-        return false;
-    }
+    /**
+     * Monotonically increasing test counter.
+     * Incremented synchronously in {@link onTestEnd} to avoid race conditions
+     * when multiple async {@link processTestResult} calls run concurrently.
+     */
+    private testIndex = 0;
 
-    // Global summary tracking
-    private executionSummary: TestSummary = {
+    /** Async tasks queued by `onTestEnd`; drained in `onEnd`. */
+    private readonly tasks: Promise<void>[] = [];
+
+    /** Aggregated data for the final summary report. */
+    private readonly executionSummary: TestSummary = {
         duration: '',
         status: '',
         statusIcon: '',
@@ -63,181 +109,229 @@ class SnapAllyReporter implements Reporter {
         date: '',
     };
 
-    // Track async tasks to ensure they finish before onEnd
-    private tasks: Promise<void>[] = [];
-
     constructor(options: AccessibilityReporterOptions = {}) {
         this.options = options;
         this.outputFolder = path.resolve(process.cwd(), options.outputFolder || 'steps-report');
+        this.colors = {
+            critical: options.colors?.critical || DEFAULT_COLORS.critical,
+            serious: options.colors?.serious || DEFAULT_COLORS.serious,
+            moderate: options.colors?.moderate || DEFAULT_COLORS.moderate,
+            minor: options.colors?.minor || DEFAULT_COLORS.minor,
+        };
     }
 
-    onBegin(config: FullConfig) {
+    printsToStdio(): boolean {
+        return false;
+    }
+
+    onBegin(config: FullConfig): void {
         this.projectRoot = config.rootDir || 'tests';
     }
 
-    onTestEnd(test: TestCase, result: TestResult) {
-        this.tasks.push(this.processTestResult(test, result));
+    onTestEnd(test: TestCase, result: TestResult): void {
+        // Increment index synchronously so concurrent tasks never share an index.
+        const index = ++this.testIndex;
+        this.tasks.push(this.processTestResult(test, result, index));
     }
 
-    private async processTestResult(test: TestCase, result: TestResult) {
-        this.testIndex++;
+    async onEnd(result: FullResult): Promise<void> {
+        await Promise.all(this.tasks);
+
+        this.executionSummary.duration = A11yTimeUtils.formatDuration(result.duration);
+        this.executionSummary.status = result.status;
+        this.executionSummary.statusIcon =
+            TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
+        this.executionSummary.date = A11yTimeUtils.formatDate(new Date());
+
+        const summaryFile = path.join(this.outputFolder, 'summary.html');
+        await this.renderer.render(
+            'execution-summary.html',
+            { ...this.executionSummary, colors: this.colors },
+            this.outputFolder,
+            summaryFile
+        );
+
+        console.log(`\n[SnapAlly] Reports generated in: ${path.resolve(this.outputFolder)}`);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Core per-test processing
+    // ────────────────────────────────────────────────────────────────────────
+
+    private async processTestResult(
+        test: TestCase,
+        result: TestResult,
+        index: number
+    ): Promise<void> {
         const sanitizedTitle = test.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-        const testFolderName = `${this.testIndex}-${sanitizedTitle}`;
+        const testFolderName = `${index}-${sanitizedTitle}`;
         const testResultsFolder = path.join(this.outputFolder, testFolderName);
 
-        // --- 1. Functional Step Reporting ---
         const fileGroup = path.relative(this.projectRoot, test.location.file);
-        if (!this.executionSummary.groupedResults[fileGroup]) {
-            this.executionSummary.groupedResults[fileGroup] = [];
-        }
+        this.ensureGroupExists(fileGroup);
 
+        const browser = this.resolveBrowser(test);
+        const testMeta = this.extractTestMetadata(test, result);
+
+        // Copy assets
+        const video = await this.assetsManager.copyTestVideo(result, testResultsFolder);
+        const screenshots = this.assetsManager.copyScreenshots(result, testResultsFolder);
+        const allAttachments = [
+            ...this.assetsManager.copyPngAttachments(result, testResultsFolder),
+            ...this.assetsManager.copyAllOtherAttachments(result, testResultsFolder),
+        ];
+
+        const errorLogs = this.extractErrorLogs(result);
+
+        // Accessibility processing
+        const a11yResult = await this.processAccessibilityData(
+            test,
+            result,
+            sanitizedTitle,
+            testResultsFolder,
+            testMeta.steps,
+            video,
+            browser,
+            errorLogs
+        );
+
+        // Update browser & global summary counts
+        this.updateBrowserSummary(browser, result.status);
+        this.updateGlobalSummary(test, result);
+
+        // Build the test stats object
+        const executionReportName = `execution-${sanitizedTitle}.html`;
+        const testStats: TestResults = {
+            num: index,
+            folderName: testFolderName,
+            executionReportPath: `${testFolderName}/${executionReportName}`,
+            title: test.title,
+            fileName: fileGroup,
+            timeDuration: result.duration,
+            duration: A11yTimeUtils.formatDuration(result.duration),
+            description: testMeta.description,
+            status: result.status,
+            browser,
+            tags: testMeta.tags,
+            preConditions: testMeta.preConditions,
+            steps: testMeta.steps,
+            postConditions: testMeta.postConditions,
+            statusIcon: testMeta.statusIcon,
+            pageUrl: a11yResult.pageUrl,
+            videoPath: video,
+            screenshotPaths: screenshots,
+            attachments: allAttachments,
+            errors: errorLogs,
+            a11yReportPath: a11yResult.reportPath,
+            a11yErrorCount: a11yResult.errorCount,
+            a11yErrors: a11yResult.errors,
+            colors: this.options.colors,
+        };
+
+        this.executionSummary.groupedResults[fileGroup].push(testStats);
+
+        // Render the per-test execution report
+        const indexFile = path.join(testResultsFolder, executionReportName);
+        await this.renderer.render(
+            'test-execution-report.html',
+            { ...testStats, colors: this.colors },
+            testResultsFolder,
+            indexFile
+        );
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    //  Metadata extraction
+    // ────────────────────────────────────────────────────────────────────────
+
+    /** Extracts structured metadata from test annotations and result steps. */
+    private extractTestMetadata(test: TestCase, result: TestResult) {
         const tags = test.tags.map((t) => t.replace('@', ''));
-        const statusIcon = TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const projectUse = (test.parent.project()?.use as any) || {};
-        const browser =
-            test.parent.project()?.name ||
-            projectUse.browserName ||
-            projectUse.defaultBrowserType ||
-            'chromium';
+        const statusIcon =
+            TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
 
         const descAnnotation = test.annotations.find((a) => a.type === 'Description');
         const description = descAnnotation?.description || 'No Description';
 
-        // Prepare steps from actual test.step calls instead of just annotations
-        const steps = result.steps.filter((s) => s.category === 'test.step').map((s) => s.title);
+        const steps = result.steps
+            .filter((s) => s.category === 'test.step')
+            .map((s) => s.title);
 
         const preConditions = test.annotations
             .filter((a) => a.type === 'Pre Condition')
             .map((a) => a.description || '');
+
         const postConditions = test.annotations
             .filter((a) => a.type === 'Post Condition')
             .map((a) => a.description || '');
 
-        const video = await this.assetsManager.copyTestVideo(result, testResultsFolder);
-        const screenshots = this.assetsManager.copyScreenshots(result, testResultsFolder);
-        const pngAttachments = this.assetsManager.copyPngAttachments(result, testResultsFolder);
-        const otherAttachments = this.assetsManager.copyAllOtherAttachments(
-            result,
-            testResultsFolder
+        return { tags, statusIcon, description, steps, preConditions, postConditions };
+    }
+
+    /** Determines the browser name for the current test. */
+    private resolveBrowser(test: TestCase): string {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const projectUse = (test.parent.project()?.use as any) || {};
+        return (
+            test.parent.project()?.name ||
+            projectUse.browserName ||
+            projectUse.defaultBrowserType ||
+            'chromium'
         );
-        const allAttachments = [...pngAttachments, ...otherAttachments];
+    }
 
-        console.log(
-            `[SnapAlly Debug] Test "${test.title}" ended. Status: ${result.status}. Video: ${video ? 'Created' : 'Missing'}`
-        );
-        console.log(
-            `[SnapAlly Debug] Raw Attachments: ${result.attachments.map((a) => `${a.name} (${a.path ? 'file' : 'body'})`).join(', ')}`
-        );
+    /** Converts Playwright error objects into HTML-safe strings. */
+    private extractErrorLogs(result: TestResult): string[] {
+        return (result.errors || []).map((err) => {
+            const fullMsg = err.stack
+                ? `${err.message}\n${err.stack}`
+                : err.message || 'Error occurred';
+            return this.renderer.ansiToHtml(fullMsg);
+        });
+    }
 
-        const errorLogs =
-            (result.errors || []).map((err) => {
-                const fullMsg = err.stack
-                    ? `${err.message}\n${err.stack}`
-                    : err.message || 'Error occurred';
-                return this.renderer.ansiToHtml(fullMsg);
-            }) || [];
+    // ────────────────────────────────────────────────────────────────────────
+    //  Accessibility data processing
+    // ────────────────────────────────────────────────────────────────────────
 
-        // --- 2. Accessibility Reporting (Iterate over all A11y sources: attachments and annotations) ---
-        const a11yAttachments = (result.attachments || []).filter((a) => a.name === 'A11y');
-        const a11yAnnotations = (test.annotations || []).filter((a) => a.type === 'A11y');
+    /** Return value for {@link processAccessibilityData}. */
+    private async processAccessibilityData(
+        test: TestCase,
+        result: TestResult,
+        sanitizedTitle: string,
+        testResultsFolder: string,
+        steps: string[],
+        video: string,
+        browser: string,
+        errorLogs: string[]
+    ): Promise<{ reportPath?: string; errorCount: number; errors: A11yError[]; pageUrl?: string }> {
+        const sources = this.collectA11yDataSources(test, result);
 
-        const a11yDataSources = [
-            ...a11yAttachments.map((a) => ({ type: 'attachment', data: a })),
-            ...a11yAnnotations.map((a) => ({ type: 'annotation', data: a })),
-        ];
-
-        if (a11yDataSources.length === 0) {
-            console.error(`[SnapAlly Debug] No A11y data sources found for test: ${test.title}`);
+        if (sources.length === 0) {
+            return { errorCount: 0, errors: [] };
         }
 
-        let a11yReportPath: string | undefined = undefined;
-        let a11yErrorCount = 0;
-        let aggregatedA11yErrors: A11yError[] = [];
-        let testStatsPageUrl: string | undefined = undefined;
+        let reportPath: string | undefined;
+        let errorCount = 0;
+        const aggregatedErrors: A11yError[] = [];
+        let pageUrl: string | undefined;
 
-        // Loop through all accessibility scans in this test
-        for (const [index, source] of a11yDataSources.entries()) {
-            let reportData: ReportData;
+        for (const [index, source] of sources.entries()) {
+            const reportData = this.parseA11ySource(source, errorLogs);
+            if (!reportData) continue;
 
-            try {
-                if (source.type === 'attachment') {
-                    const attach = source.data as { name: string; body?: Buffer; path?: string };
-                    if (attach.body) {
-                        reportData = JSON.parse(attach.body.toString());
-                    } else if (attach.path && fs.existsSync(attach.path)) {
-                        reportData = JSON.parse(fs.readFileSync(attach.path, 'utf-8'));
-                    } else {
-                        continue;
-                    }
-                } else {
-                    const annot = source.data as { type: string; description?: string };
-                    reportData = JSON.parse(annot.description || '{}');
-                }
-            } catch (e) {
-                console.error(`[SnapAlly] Failed to parse A11y ${source.type}: ${e}`);
-                errorLogs.push(
-                    this.renderer.ansiToHtml(
-                        `[SnapAlly] Internal error parsing accessibility data from ${source.type}: ${e}`
-                    )
-                );
-                continue;
-            }
+            const reportName = this.buildA11yReportName(
+                sanitizedTitle,
+                reportData.pageKey,
+                index,
+                sources.length
+            );
+            reportPath = reportName;
 
-            // Determine Report Name (append index if multiple)
-            let a11yReportName = `accessibility-${sanitizedTitle}.html`;
-            if (a11yDataSources.length > 1) {
-                a11yReportName = `accessibility-${sanitizedTitle}-${index + 1}.html`;
-            }
+            this.applyReportConfig(reportData, video);
+            this.backfillSteps(reportData, steps);
 
-            // Sanitize pageKey for filename override if present
-            if (reportData.pageKey) {
-                const sanitizedKey = reportData.pageKey
-                    .replace(/https?:\/\//, '')
-                    .replace(/[^a-z0-9]+/gi, '-')
-                    .replace(/^-+|-+$/g, '')
-                    .toLowerCase();
-
-                if (sanitizedKey) {
-                    a11yReportName =
-                        a11yDataSources.length > 1
-                            ? `${sanitizedKey}-${index + 1}.html`
-                            : `${sanitizedKey}.html`;
-                }
-            }
-
-            // Set the main report path to the LAST one (or maybe first? using last for now)
-            a11yReportPath = a11yReportName;
-
-            // Re-apply configuration
-            reportData.criticalColor = this.options.colors?.critical || '#c92a2a';
-            reportData.seriousColor = this.options.colors?.serious || '#e67700';
-            reportData.moderateColor = this.options.colors?.moderate || '#ca8a04';
-            reportData.minorColor = this.options.colors?.minor || '#0891b2';
-
-            if (this.options.ado) {
-                reportData.adoOrganization =
-                    this.options.ado.organization || reportData.adoOrganization;
-                reportData.adoProject = this.options.ado.project || reportData.adoProject;
-            }
-
-            // Sync video name
-            if (video) reportData.video = video;
-
-            // Backfill steps from actual test.step calls if annotations were empty
-            const filteredSteps = steps.filter((s) => !s.includes('Capture A11y screenshot'));
-            if (filteredSteps.length > 0) {
-                reportData.a11yErrors.forEach((err) => {
-                    err.target.forEach((t) => {
-                        if (!t.steps || t.steps.length === 0) {
-                            t.steps = filteredSteps;
-                            t.stepsJson = JSON.stringify(filteredSteps);
-                        }
-                    });
-                });
-            }
-
-            const auditFile = path.join(testResultsFolder, a11yReportName);
+            const auditFile = path.join(testResultsFolder, reportName);
             await this.renderer.render(
                 'accessibility-report.html',
                 { data: reportData, folderTest: testResultsFolder },
@@ -245,92 +339,174 @@ class SnapAllyReporter implements Reporter {
                 auditFile
             );
 
-            // Capture the first page URL for the testStats if not already set
-            if (reportData.pageUrl && !testStatsPageUrl) {
-                testStatsPageUrl = reportData.pageUrl;
+            if (reportData.pageUrl && !pageUrl) {
+                pageUrl = reportData.pageUrl;
             }
 
-            // --- 3. Update Browser-Specific Summary (Partial Aggregation) ---
-            if (!this.executionSummary.browserSummaries![browser]) {
-                this.executionSummary.browserSummaries![browser] = {
-                    duration: '0s',
-                    status: '',
-                    statusIcon: '',
-                    total: 0,
-                    totalFailed: 0,
-                    totalFlaky: 0,
-                    totalPassed: 0,
-                    totalSkipped: 0,
-                    groupedResults: {},
-                    wcagErrors: {},
-                    totalA11yErrorCount: 0,
+            // Aggregate a11y errors into browser & global summaries
+            if (reportData.a11yErrors?.length) {
+                const scanCount = this.aggregateA11yErrors(reportData.a11yErrors, browser);
+                errorCount += scanCount;
+                aggregatedErrors.push(...reportData.a11yErrors);
+            }
+        }
+
+        return { reportPath, errorCount, errors: aggregatedErrors, pageUrl };
+    }
+
+    /** Collects all A11y data sources (attachments + annotations) for a test. */
+    private collectA11yDataSources(test: TestCase, result: TestResult): A11yDataSource[] {
+        const attachments = (result.attachments || [])
+            .filter((a) => a.name === 'A11y')
+            .map((a): A11yDataSource => ({ type: 'attachment', data: a }));
+
+        const annotations = (test.annotations || [])
+            .filter((a) => a.type === 'A11y')
+            .map((a): A11yDataSource => ({ type: 'annotation', data: a }));
+
+        return [...attachments, ...annotations];
+    }
+
+    /** Attempts to parse a single A11y data source into a ReportData object. */
+    private parseA11ySource(source: A11yDataSource, errorLogs: string[]): ReportData | null {
+        try {
+            if (source.type === 'attachment') {
+                const attach = source.data;
+                if (attach.body) {
+                    return JSON.parse(attach.body.toString()) as ReportData;
+                }
+                if (attach.path && fs.existsSync(attach.path)) {
+                    return JSON.parse(fs.readFileSync(attach.path, 'utf-8')) as ReportData;
+                }
+                return null;
+            }
+
+            // annotation
+            const annot = source.data;
+            return JSON.parse(annot.description || '{}') as ReportData;
+        } catch (e) {
+            console.error(`[SnapAlly] Failed to parse A11y ${source.type}: ${e}`);
+            errorLogs.push(
+                this.renderer.ansiToHtml(
+                    `[SnapAlly] Internal error parsing accessibility data from ${source.type}: ${e}`
+                )
+            );
+            return null;
+        }
+    }
+
+    /** Generates a sanitized HTML filename for an accessibility report. */
+    private buildA11yReportName(
+        sanitizedTitle: string,
+        pageKey: string | undefined,
+        index: number,
+        totalScans: number
+    ): string {
+        const hasMultiple = totalScans > 1;
+        const suffix = hasMultiple ? `-${index + 1}` : '';
+
+        if (pageKey) {
+            const sanitizedKey = pageKey
+                .replace(/https?:\/\//, '')
+                .replace(/[^a-z0-9]+/gi, '-')
+                .replace(/^-+|-+$/g, '')
+                .toLowerCase();
+
+            if (sanitizedKey) {
+                return `${sanitizedKey}${suffix}.html`;
+            }
+        }
+
+        return `accessibility-${sanitizedTitle}${suffix}.html`;
+    }
+
+    /** Applies reporter-level configuration (colors, ADO, video) to a ReportData object. */
+    private applyReportConfig(reportData: ReportData, video: string): void {
+        reportData.criticalColor = this.colors.critical;
+        reportData.seriousColor = this.colors.serious;
+        reportData.moderateColor = this.colors.moderate;
+        reportData.minorColor = this.colors.minor;
+
+        if (this.options.ado) {
+            reportData.adoOrganization =
+                this.options.ado.organization || reportData.adoOrganization;
+            reportData.adoProject = this.options.ado.project || reportData.adoProject;
+        }
+
+        if (video) {
+            reportData.video = video;
+        }
+    }
+
+    /**
+     * Backfills reproduction steps from `test.step` calls into a11y targets
+     * that have no steps recorded (e.g. violations found via static scan).
+     */
+    private backfillSteps(reportData: ReportData, steps: string[]): void {
+        const filteredSteps = steps.filter((s) => !s.includes('Capture A11y screenshot'));
+        if (filteredSteps.length === 0) return;
+
+        for (const err of reportData.a11yErrors) {
+            for (const target of err.target) {
+                if (!target.steps || target.steps.length === 0) {
+                    target.steps = filteredSteps;
+                    target.stepsJson = JSON.stringify(filteredSteps);
+                }
+            }
+        }
+    }
+
+    // ──────────────────────────────���─────────────────────────────────────────
+    //  Summary aggregation
+    // ────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Aggregates a11y error counts into both the browser-specific and global
+     * summaries. Returns the total error count for this scan.
+     */
+    private aggregateA11yErrors(errors: A11yError[], browser: string): number {
+        const bSummary = this.getOrCreateBrowserSummary(browser);
+        let scanErrorCount = 0;
+
+        for (const err of errors) {
+            const count = err.total || 0;
+            scanErrorCount += count;
+
+            // Browser-level aggregation
+            if (!bSummary.wcagErrors[err.id]) {
+                bSummary.wcagErrors[err.id] = {
+                    count: 0,
+                    severity: err.severity,
+                    helpUrl: err.helpUrl,
+                    description: err.description,
                 };
             }
-            const bSummary = this.executionSummary.browserSummaries![browser];
+            bSummary.wcagErrors[err.id].count += count;
 
-            if (reportData.a11yErrors && reportData.a11yErrors.length > 0) {
-                // Aggregate counts
-                const scanErrorCount = reportData.a11yErrors.reduce(
-                    (sum: number, err: A11yError) => sum + (err.total || 0),
-                    0
-                );
-                a11yErrorCount += scanErrorCount;
-
-                aggregatedA11yErrors.push(...reportData.a11yErrors);
-
-                reportData.a11yErrors.forEach((err: A11yError) => {
-                    const rule = err.id;
-
-                    // Local Browser aggregation
-                    if (!bSummary.wcagErrors[rule]) {
-                        bSummary.wcagErrors[rule] = {
-                            count: 0,
-                            severity: err.severity,
-                            helpUrl: err.helpUrl,
-                            description: err.description,
-                        };
-                    }
-                    bSummary.wcagErrors[rule].count += err.total || 0;
-
-                    // Global aggregation (always add to ensure summary is not empty)
-                    if (!this.executionSummary.wcagErrors[rule]) {
-                        this.executionSummary.wcagErrors[rule] = {
-                            count: 0,
-                            severity: err.severity,
-                            helpUrl: err.helpUrl,
-                            description: err.description,
-                        };
-                    }
-                    this.executionSummary.wcagErrors[rule].count += err.total || 0;
-                });
-
-                // Update total error counts
-                bSummary.totalA11yErrorCount += scanErrorCount;
-                this.executionSummary.totalA11yErrorCount += scanErrorCount;
+            // Global aggregation
+            if (!this.executionSummary.wcagErrors[err.id]) {
+                this.executionSummary.wcagErrors[err.id] = {
+                    count: 0,
+                    severity: err.severity,
+                    helpUrl: err.helpUrl,
+                    description: err.description,
+                };
             }
+            this.executionSummary.wcagErrors[err.id].count += count;
         }
 
-        // --- 4. Final Aggregation and Test Stats ---
-        // Update browser summary counts (always, even if no a11y scan occurred)
-        if (!this.executionSummary.browserSummaries![browser]) {
-            this.executionSummary.browserSummaries![browser] = {
-                duration: '0s',
-                status: '',
-                statusIcon: '',
-                total: 0,
-                totalFailed: 0,
-                totalFlaky: 0,
-                totalPassed: 0,
-                totalSkipped: 0,
-                groupedResults: {},
-                wcagErrors: {},
-                totalA11yErrorCount: 0,
-            };
-        }
+        bSummary.totalA11yErrorCount += scanErrorCount;
+        this.executionSummary.totalA11yErrorCount += scanErrorCount;
 
-        const bSummary = this.executionSummary.browserSummaries![browser];
+        return scanErrorCount;
+    }
+
+    /** Updates the browser-specific test counts (passed/failed/skipped). */
+    private updateBrowserSummary(browser: string, status: string): void {
+        const bSummary = this.getOrCreateBrowserSummary(browser);
         bSummary.total++;
-        switch (result.status) {
+
+        switch (status) {
             case 'passed':
                 bSummary.totalPassed++;
                 break;
@@ -341,38 +517,10 @@ class SnapAllyReporter implements Reporter {
                 bSummary.totalSkipped++;
                 break;
         }
+    }
 
-        const executionReportName = `execution-${sanitizedTitle}.html`;
-        const testStats: TestResults = {
-            num: this.testIndex,
-            folderName: testFolderName,
-            executionReportPath: `${testFolderName}/${executionReportName}`,
-            title: test.title,
-            fileName: fileGroup,
-            timeDuration: result.duration,
-            duration: A11yTimeUtils.formatDuration(result.duration),
-            description,
-            status: result.status,
-            browser,
-            tags,
-            preConditions,
-            steps,
-            postConditions,
-            statusIcon,
-            pageUrl: testStatsPageUrl,
-            videoPath: video,
-            screenshotPaths: screenshots,
-            attachments: allAttachments,
-            errors: errorLogs,
-            a11yReportPath,
-            a11yErrorCount,
-            a11yErrors: aggregatedA11yErrors,
-            colors: this.options.colors,
-        };
-
-        this.executionSummary.groupedResults[fileGroup].push(testStats);
-
-        // Update summary counts
+    /** Updates the global execution summary counts. */
+    private updateGlobalSummary(test: TestCase, result: TestResult): void {
         const isFlaky = test.results.length > 1 && result.status === 'passed';
         if (isFlaky) this.executionSummary.totalFlaky++;
 
@@ -388,51 +536,38 @@ class SnapAllyReporter implements Reporter {
                 break;
         }
         this.executionSummary.total++;
-
-        // Create color config for template
-        const colors = {
-            critical: this.options.colors?.critical || '#c92a2a',
-            serious: this.options.colors?.serious || '#e67700',
-            moderate: this.options.colors?.moderate || '#ca8a04',
-            minor: this.options.colors?.minor || '#0891b2',
-        };
-
-        // Render Step Report
-        const indexFile = path.join(testResultsFolder, `execution-${sanitizedTitle}.html`);
-        await this.renderer.render(
-            'test-execution-report.html',
-            { ...testStats, colors },
-            testResultsFolder,
-            indexFile
-        );
     }
 
-    async onEnd(result: FullResult) {
-        // Wait for all test result processing to finish
-        await Promise.all(this.tasks);
+    // ────────────────────────────────────────────────────────────────────────
+    //  Helpers
+    // ────────────────────────────────────────────────────────────────────────
 
-        const summaryFile = path.join(this.outputFolder, 'summary.html');
-        this.executionSummary.duration = A11yTimeUtils.formatDuration(result.duration);
-        this.executionSummary.status = result.status;
-        this.executionSummary.statusIcon =
-            TestStatusIcon[result.status as keyof typeof TestStatusIcon] || 'help';
-        this.executionSummary.date = A11yTimeUtils.formatDate(new Date());
+    /** Ensures a file group key exists in the grouped results map. */
+    private ensureGroupExists(fileGroup: string): void {
+        if (!this.executionSummary.groupedResults[fileGroup]) {
+            this.executionSummary.groupedResults[fileGroup] = [];
+        }
+    }
 
-        const colors = {
-            critical: this.options.colors?.critical || '#c92a2a',
-            serious: this.options.colors?.serious || '#e67700',
-            moderate: this.options.colors?.moderate || '#ca8a04',
-            minor: this.options.colors?.minor || '#0891b2',
-        };
-
-        await this.renderer.render(
-            'execution-summary.html',
-            { ...this.executionSummary, colors },
-            this.outputFolder,
-            summaryFile
-        );
-
-        console.log(`\n[SnapAlly] Reports generated in: ${path.resolve(this.outputFolder)}`);
+    /** Lazily initialises and returns the browser summary for the given browser name. */
+    private getOrCreateBrowserSummary(browser: string): TestSummary {
+        const summaries = this.executionSummary.browserSummaries!;
+        if (!summaries[browser]) {
+            summaries[browser] = {
+                duration: '0s',
+                status: '',
+                statusIcon: '',
+                total: 0,
+                totalFailed: 0,
+                totalFlaky: 0,
+                totalPassed: 0,
+                totalSkipped: 0,
+                groupedResults: {},
+                wcagErrors: {},
+                totalA11yErrorCount: 0,
+            };
+        }
+        return summaries[browser];
     }
 }
 

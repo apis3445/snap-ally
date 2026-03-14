@@ -58,7 +58,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
     // Sanitize pageKey to prevent path traversal attacks
     const rawPageKey = options.pageKey || page.url();
     const pageKey = sanitizePageKey(rawPageKey);
-    const overlay = new A11yAuditOverlay(page, pageKey);
+    const overlay = new A11yAuditOverlay(page);
 
     // Configure Axe
     let axeBuilder = new AxeBuilder({ page });

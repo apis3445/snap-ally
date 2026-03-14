@@ -12,7 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Set up custom severity colors if provided
-    applyCustomColors(data);
+    // Unwrap nested data format used by accessibility reports (e.g. { data: reportData })
+    const effective = data.data || data;
+    applyCustomColors(effective);
 
     // Determine which template we are on based on root containers
     if (document.getElementById('report-summary-root')) {
@@ -516,16 +518,7 @@ function renderAccessibilityReport(injectedData) {
                 bClone.querySelector('.bug-rule-name').textContent = v.help;
                 bClone.querySelector('.bug-snippet-text').textContent = snippetText;
 
-                const btn = bClone.querySelector('.btn-bug');
-                // generateAdoPayload binding
-                const safeSnippet = escapeHtml(snippetText);
-                const wcag = escapeHtml(v.wcagRule || (v.tags ? v.tags.join(', ') : ''));
-                btn.setAttribute(
-                    'onclick',
-                    `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}')`
-                );
-
-                const failSec = bClone.querySelector('.bug-failure-summary');
+                // Parse steps for both the card display and the bug dialog
                 let stepsArray = node.steps || [];
                 if (typeof stepsArray === 'string') {
                     try {
@@ -534,6 +527,18 @@ function renderAccessibilityReport(injectedData) {
                         stepsArray = [];
                     }
                 }
+
+                const btn = bClone.querySelector('.btn-bug');
+                // generateAdoPayload binding — encode steps as JSON for safe transport
+                const safeSnippet = escapeHtml(snippetText);
+                const wcag = escapeHtml(v.wcagRule || (v.tags ? v.tags.join(', ') : ''));
+                const safeStepsJson = encodeURIComponent(JSON.stringify(stepsArray));
+                btn.setAttribute(
+                    'onclick',
+                    `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}', '${safeStepsJson}')`
+                );
+
+                const failSec = bClone.querySelector('.bug-failure-summary');
 
                 if (stepsArray && stepsArray.length > 0) {
                     failSec.innerHTML = `<ol style="margin: 0; padding-left: 18px; line-height: 1.5;">${stepsArray.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol>`;
@@ -740,7 +745,8 @@ window.generateAdoPayload = function (
     screenshotBase64,
     videoPath,
     snippet,
-    wcag
+    wcag,
+    stepsJson
 ) {
     const pat = sessionStorage.getItem('userToken');
     if (!pat && window.bootstrap) {
@@ -754,11 +760,32 @@ window.generateAdoPayload = function (
     document.getElementById('bugTitleInput').value = `[A11y] ${help} (${snippet})`;
     document.getElementById('bugSeverityInput').value = severity;
 
-    const data = window.snapAllyData || {};
+    const rawData = window.snapAllyData || {};
+    const data = rawData.data || rawData;
     const currentUrl = document.getElementById('bugUrlPreview');
     if (currentUrl) currentUrl.textContent = data.pageUrl || data.pageKey || 'Resource';
 
-    const stepsHtml = `
+    // Decode the reproduction steps passed from the violation card
+    let reproSteps = [];
+    if (stepsJson) {
+        try {
+            reproSteps = JSON.parse(decodeURIComponent(stepsJson));
+        } catch {
+            reproSteps = [];
+        }
+    }
+
+    // Build the reproduction steps HTML section
+    let reproStepsHtml = '';
+    if (reproSteps.length > 0) {
+        reproStepsHtml = `
+        <div style="border-top: 1px solid #e2e8f0; margin: 8px 0; padding-top: 8px;"><b>Reproduction Steps:</b></div>
+        <ol style="margin: 8px 0; padding-left: 20px; line-height: 1.6; font-family: Inter, sans-serif;">
+          ${reproSteps.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ol>`;
+    }
+
+    const failureHtml = `
     <div style="font-family: monospace; background: #fffcf0; padding: 12px; border: 1px solid #e2e8f0;">
       ${failureSummary ? failureSummary.replace(/\\n/g, '<br>') : 'Issue discovered via static analysis scans.'}
     </div>
@@ -768,11 +795,15 @@ window.generateAdoPayload = function (
     </div>
   `;
 
+    // Combine everything into the full repro HTML used for both preview and ADO payload
+    const stepsHtml = reproStepsHtml + failureHtml;
+
     document.getElementById('bugReproPreview').innerHTML = `
     <div style="margin-bottom: 4px;"><b>Rule:</b> ${axeId} (${wcag})</div>
     <div style="margin-bottom: 8px;"><b>Recommendation:</b> ${help}</div>
+    ${reproStepsHtml ? reproStepsHtml : ''}
     <div style="border-top: 1px solid #e2e8f0; margin: 8px 0; padding-top: 8px;"><b>Failure Summary:</b></div>
-    ${stepsHtml}
+    ${failureHtml}
   `;
 
     const screenshotPreview = document.getElementById('bugScreenshotPreview');
@@ -814,7 +845,8 @@ window.generateAdoPayload = function (
 };
 
 async function uploadAttachment(blob, name) {
-    const data = window.snapAllyData || {};
+    const rawData = window.snapAllyData || {};
+    const data = rawData.data || rawData;
     const org = data.adoOrganization;
     const proj = data.adoProject;
     const pat = sessionStorage.getItem('userToken');
@@ -833,7 +865,8 @@ async function uploadAttachment(blob, name) {
 }
 
 async function submitFinalBug() {
-    const data = window.snapAllyData || {};
+    const rawData = window.snapAllyData || {};
+    const data = rawData.data || rawData;
     const org = data.adoOrganization;
     const proj = data.adoProject;
     const pat = sessionStorage.getItem('userToken');
