@@ -18,7 +18,12 @@ export default defineConfig({
                     moderate: '#0000ff',
                     minor: '#f0f06f',
                 },
+                ado: {
+                    organization: 'wbi1521',
+                    project: 'Angular'
+                }
             },
+
         ],
     ],
     use: {
