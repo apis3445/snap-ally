@@ -1,3 +1,10 @@
+## 2026-03-13
+
+### Changed
+- Fixed the option to create bugs on Azure DevOps and include the steps
+- Updated A11yHtmlRenderer to generate unique data filenames for reports to prevent collisions.
+- Modified A11yScanner to simplify overlay initialization by removing unnecessary pageKey parameter.
+
 ## 2026-03-07
 
 ### Changed
