@@ -932,7 +932,7 @@ async function submitFinalBug() {
             value: `Found at URL / Resource: <a href="${safePageKey}">${safePageKey}</a>`,
         },
         { op: 'add', path: '/fields/Microsoft.VSTS.Common.Priority', value: priority },
-        { op: 'add', path: '/fields/System.AreaPath', value: area.startsWith(proj) ? area : `${proj}\\${area}` },
+        { op: 'add', path: '/fields/System.AreaPath', value: area.startsWith(proj + '\\') || area === proj ? area : `${proj}\\${area}` },
         { op: 'add', path: '/fields/System.Tags', value: 'A11y;SnapAlly;UI-Test' },
     ];
 
