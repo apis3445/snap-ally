@@ -1,3 +1,7 @@
+### Changed
+- Improved Azure DevOps bug creation by supporting configurable area paths and more robust attachment handling.
+- Expanded Playwright test coverage by adding additional desktop browser projects.
+
 ## 2026-03-14
 
 ### Changed
