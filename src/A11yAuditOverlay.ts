@@ -1,4 +1,4 @@
-import { Page, TestInfo, test } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 
 /**
  * Handles visual feedback and Playwright annotations during an accessibility audit.
@@ -302,6 +302,8 @@ export class A11yAuditOverlay {
      * @returns The raw screenshot buffer.
      */
     async captureAndAttachScreenshot(fileName: string, testInfo: TestInfo): Promise<Buffer> {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { test } = require('@playwright/test');
         return await test.step('Capture A11y screenshot', async () => {
             const screenshot = await this.page.screenshot({ fullPage: false });
             await testInfo.attach(fileName, { contentType: 'image/png', body: screenshot });
