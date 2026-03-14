@@ -25,9 +25,6 @@ I believe that with relatively simple changes in HTML, good color contrast, amon
 **[▶️ Watch the Demo Video](https://www.loom.com/share/853c04f1f76242a699e8f82e54733007)**
 
 ---
-## Screenshots
-
-![Accessibility Report](image.png)
 
 ## ✨ Features
 
