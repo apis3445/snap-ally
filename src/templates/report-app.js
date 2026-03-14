@@ -880,7 +880,7 @@ async function submitFinalBug() {
 
     const title = document.getElementById('bugTitleInput').value;
     const severity = document.getElementById('bugSeverityInput').value;
-    const area = document.getElementById('bugAreaInput').value || 'Accessibility';
+    const area = document.getElementById('bugAreaInput').value;
 
     let screenshotUrl = null;
     if (screenshotBase64) {
@@ -932,9 +932,17 @@ async function submitFinalBug() {
             value: `Found at URL / Resource: <a href="${safePageKey}">${safePageKey}</a>`,
         },
         { op: 'add', path: '/fields/Microsoft.VSTS.Common.Priority', value: priority },
-        { op: 'add', path: '/fields/System.AreaPath', value: area.startsWith(proj + '\\') || area === proj ? area : `${proj}\\${area}` },
-        { op: 'add', path: '/fields/System.Tags', value: 'A11y;SnapAlly;UI-Test' },
     ];
+
+    if (area) {
+        payload.push({
+            op: 'add',
+            path: '/fields/System.AreaPath',
+            value: area.startsWith(proj + '\\') || area === proj ? area : `${proj}\\${area}`,
+        });
+    }
+
+    payload.push({ op: 'add', path: '/fields/System.Tags', value: 'A11y;SnapAlly;UI-Test' });
 
     if (screenshotUrl) {
         payload.push({
