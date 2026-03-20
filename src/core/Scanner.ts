@@ -1,66 +1,36 @@
 import AxeBuilder from '@axe-core/playwright';
-import type { Page, Locator, TestInfo } from '@playwright/test';
-import { A11yAuditOverlay } from './A11yAuditOverlay';
-import { A11yError, ReportData, Target, Severity } from './models';
-import { A11yTimeUtils } from './A11yTimeUtils';
+import type { Page, TestInfo } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { VisualReporter } from './VisualReporter';
+import { Violation, ReportData, Target, ScannerOptions, DEFAULT_COLORS, getSeverityColor } from '../models';
+import { TimeUtils } from '../utils/TimeUtils';
 
 /**
  * Sanitizes a string to be safe for use in file paths and prevents path traversal attacks.
- * Removes or replaces dangerous characters and path separators.
  */
 function sanitizePageKey(input: string): string {
     return (
         input
-            // Remove protocol
             .replace(/^https?:\/\//, '')
-            // Remove or replace path separators and dangerous characters
             .replace(/[\/\\:*?"<>|]/g, '-')
-            // Remove any remaining path traversal attempts
             .replace(/\.\./g, '')
-            // Replace multiple consecutive dashes with a single dash
             .replace(/-+/g, '-')
-            // Remove leading/trailing dashes
             .replace(/^-+|-+$/g, '')
-            // Convert to lowercase for consistency
             .toLowerCase()
-            // Limit length to prevent filesystem issues
             .substring(0, 200)
     );
-}
-
-export interface A11yScannerOptions {
-    /** Specific selector or locator to include in the scan. */
-    include?: string | Locator;
-    /** Alias for include. */
-    box?: string | Locator;
-
-    /** Whether to log violations to the console. @default true */
-    verbose?: boolean;
-    /** Alias for verbose. */
-    consoleLog?: boolean;
-
-    /** Specific Axe rules to enable or disable. */
-    rules?: Record<string, { enabled: boolean }>;
-    /** Specific WCAG tags to check (e.g., ['wcag2a', 'wcag2aa']). */
-    tags?: string[];
-    /** Any other Axe-core options to pass to the builder. */
-    axeOptions?: Record<string, unknown>;
-    /** Custom identifier for the report file name. */
-    pageKey?: string;
 }
 
 /**
  * Performs an accessibility audit using Axe and Lighthouse.
  */
-export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScannerOptions = {}) {
+export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerOptions = {}) {
     const showTerminal = options.verbose ?? true;
     const showBrowser = options.consoleLog ?? true;
-    // Sanitize pageKey to prevent path traversal attacks
     const rawPageKey = options.pageKey || page.url();
     const pageKey = sanitizePageKey(rawPageKey);
-    const overlay = new A11yAuditOverlay(page);
+    const overlay = new VisualReporter(page);
 
-    // Configure Axe
     let axeBuilder = new AxeBuilder({ page });
 
     const target = options.include || options.box;
@@ -68,9 +38,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
         if (typeof target === 'string') {
             axeBuilder = axeBuilder.include(target);
         } else {
-            // AxeBuilder for playwright also supports locators/elements in include
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            axeBuilder = axeBuilder.include(target as any);
+            axeBuilder = axeBuilder.include(target as unknown as string);
         }
     }
 
@@ -105,80 +73,70 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
 
     if ((showTerminal || showBrowser) && violationCount > 0) {
         const mainMsg = `[A11yScanner] Violations found: ${violationCount}`;
-
-        // Prepare all detail messages
         const detailMessages = axeResults.violations.map(
-            (v, i) => `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (v: any, i: number) => `  ${i + 1}. ${v.id} [${v.impact}] - ${v.help}`
         );
 
-        // Log to terminal
         if (showTerminal) {
             console.log(`\n${mainMsg}`);
             detailMessages.forEach((msg) => console.log(msg));
         }
 
-        // Batch log to Browser Console in a single evaluate call
         if (showBrowser) {
             await page.evaluate(
-                ([mainMsg, details]) => {
+                ([mainMsg, details, color]) => {
                     console.log(
                         `%c ${mainMsg}`,
-                        'color: #ea580c; font-weight: bold; font-size: 12px;'
+                        `color: ${color}; font-weight: bold; font-size: 12px;`
                     );
-                    details.forEach((msg: string) => console.log(msg));
+                    (details as string[]).forEach((msg: string) => console.log(msg));
                 },
-                [mainMsg, detailMessages] as [string, string[]]
+                [mainMsg, detailMessages, DEFAULT_COLORS.serious] as [string, string[], string]
             );
         }
     }
 
-    // Fail the test if violations found (softly)
-    // Dynamically require to avoid eager loading @playwright/test during config evaluation
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { expect } = require('@playwright/test');
     expect
         .soft(violationCount, `Accessibility audit failed with ${violationCount} violations.`)
         .toBe(0);
 
-    // Run Axe Audit
-    const errors: A11yError[] = [];
-    const colorMap: Record<string, string> = {
-        minor: '#0ea5e9', // Ocean Blue
-        moderate: '#f59e0b', // Amber/Honey
-        serious: '#ea580c', // Deep Orange
-        critical: '#dc2626', // Power Red
-    };
+    const reporterConfig = testInfo.config.reporter.find((r) =>
+        Array.isArray(r) &&
+        (typeof r[0] === 'string' &&
+            (r[0].includes('SnapAllyReporter') || r[0].endsWith('src/SnapAllyReporter.ts')))
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const customColors = reporterConfig && Array.isArray(reporterConfig) ? (reporterConfig[1] as any)?.colors : undefined;
 
-    // Process violations for the report
+    const errors: Violation[] = [];
+
     for (const violation of axeResults.violations) {
         let errorIdx = 0;
         const targets: Target[] = [];
-        const severityColor = colorMap[violation.impact || ''] || '#757575';
+        const severityColor = getSeverityColor(violation.impact, customColors);
 
         for (const node of violation.nodes) {
             for (const selector of node.target) {
                 const elementSelector = selector.toString();
                 const locator = page.locator(elementSelector);
 
-                await overlay.showViolationOverlay(
+                await overlay.showBanner(
                     { id: violation.id, help: violation.help },
                     severityColor
                 );
 
                 if (await locator.isVisible()) {
                     await overlay.highlightElement(elementSelector, severityColor);
-
-                    // Allow a small time for overlay highlight to be visible in video
                     // eslint-disable-next-line playwright/no-wait-for-timeout
                     await page.waitForTimeout(100);
 
                     const screenshotName = `a11y-${violation.id}-${errorIdx++}.png`;
-                    const buffer = await overlay.captureAndAttachScreenshot(
-                        screenshotName,
-                        testInfo
+                    const buffer = await overlay.captureScreenshot(
+                        testInfo,
+                        screenshotName
                     );
 
-                    // Capture execution steps for context
                     const excluded = new Set([
                         'Pre Condition',
                         'Post Condition',
@@ -190,7 +148,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                         .map((a) => a.description || '');
 
                     const nodeHtml = node.html || '';
-                    const friendlySnippet = elementSelector; // Use full CSS selector path from Axe core
+                    const friendlySnippet = elementSelector;
 
                     targets.push({
                         element: elementSelector,
@@ -202,7 +160,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
                         screenshotBase64: buffer.toString('base64'),
                     });
 
-                    await overlay.unhighlightElement();
+                    await overlay.removeHighlight();
                 }
             }
         }
@@ -215,30 +173,29 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: A11yScan
             help: violation.help,
             guideline: violation.tags[1] || 'N/A',
             wcagRule:
-                violation.tags.find((t) => t.startsWith('wcag')) || violation.tags[1] || 'N/A',
-            total: targets.length || violation.nodes.length, // Fallback to node count if no screenshots
+                violation.tags.find((t: string) => t.startsWith('wcag')) || violation.tags[1] || 'N/A',
+            total: targets.length || violation.nodes.length,
             target: targets,
         });
     }
 
-    // Prepare data for the reporter
     const reportData: ReportData = {
         pageKey,
         pageUrl: page.url(),
-        accessibilityScore: 0, // No longer used, derivation from Lighthouse removed
+        accessibilityScore: 0,
         a11yErrors: errors,
-        criticalColor: Severity.critical,
-        seriousColor: Severity.serious,
-        moderateColor: Severity.moderate,
-        minorColor: Severity.minor,
-        adoOrganization: process.env.ADO_ORGANIZATION || '',
-        adoProject: process.env.ADO_PROJECT || '',
-        timestamp: A11yTimeUtils.formatDate(new Date()),
+        criticalColor: customColors?.critical || DEFAULT_COLORS.critical,
+        seriousColor: customColors?.serious || DEFAULT_COLORS.serious,
+        moderateColor: customColors?.moderate || DEFAULT_COLORS.moderate,
+        minorColor: customColors?.minor || DEFAULT_COLORS.minor,
+        adoOrganization: options.ado?.organization || process.env.ADO_ORGANIZATION || '',
+        adoProject: options.ado?.project || process.env.ADO_PROJECT || '',
+        adoAreaPath: options.ado?.areaPath || process.env.ADO_AREA_PATH || '',
+        timestamp: TimeUtils.formatDate(new Date()),
     };
 
-    await overlay.addTestAttachment(testInfo, 'A11y', JSON.stringify(reportData));
-    await overlay.hideViolationOverlay();
+    await overlay.attachJsonData(testInfo, 'A11y', JSON.stringify(reportData));
+    await overlay.cleanupOverlay();
 }
 
-/** Alias for backward compatibility */
 export const checkAccessibility = scanA11y;

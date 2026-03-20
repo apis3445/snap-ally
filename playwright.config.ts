@@ -7,7 +7,7 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
     reporter: [
-        ['html'],
+        ['html', { open: 'never', attachments: 'all' }],
         [
             './src/SnapAllyReporter.ts',
             {
@@ -20,10 +20,10 @@ export default defineConfig({
                 },
                 ado: {
                     organization: 'wbi1521',
-                    project: 'Angular'
+                    project: 'Angular',
+                    areaPath: 'Angular'
                 }
             },
-
         ],
     ],
     use: {

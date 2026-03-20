@@ -6,6 +6,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Pull injected data
     const data = window.snapAllyData;
+    console.log('Snap Ally Debug: injectedData=', data);
     if (!data) {
         console.error('Snap Ally: No report data found in window.snapAllyData');
         return;
@@ -52,10 +53,25 @@ function applyCustomColors(data) {
 function renderTestExecutionReport(data) {
     const root = document.getElementById('test-execution-root');
     if (!root) return;
-    root.style.display = 'block';
+    root.classList.remove('hidden');
 
     // Set document title
     document.title = `Snap Ally - Test Execution: ${data.title}`;
+
+    if (data.a11yReportPath) {
+        console.log('[SnapAlly Diagnostic] Found report path:', data.a11yReportPath);
+        const a11yLink = document.getElementById('view-a11y-report-link');
+        if (a11yLink) {
+            const filename = data.a11yReportPath.split(/[/\\]/).pop();
+            a11yLink.href = filename;
+            a11yLink.classList.remove('hidden');
+            console.log('[SnapAlly Diagnostic] Link shown. Href:', a11yLink.href);
+        } else {
+            console.warn('[SnapAlly Diagnostic] Link element "view-a11y-report-link" NOT in DOM');
+        }
+    } else {
+        console.log('[SnapAlly Diagnostic] No a11yReportPath found in data');
+    }
 
     // Header
     document.getElementById('report-title').textContent = data.title;
@@ -65,7 +81,10 @@ function renderTestExecutionReport(data) {
     document.getElementById('report-status-icon').textContent = data.statusIcon;
     document.getElementById('report-status-text').textContent = data.status;
 
-    if (data.a11yReportPath && data.a11yErrorCount === 0) {
+    // Show verified badge only if no errors
+    // Show verified badge only if no errors and no path-reported violations
+    const hasA11yErrors = (data.a11yErrorCount > 0) || (data.a11yErrors && data.a11yErrors.length > 0);
+    if (data.a11yReportPath && !hasA11yErrors) {
         document.getElementById('report-a11y-verified').style.display = 'flex';
     }
 
@@ -81,22 +100,18 @@ function renderTestExecutionReport(data) {
         tagsContainer.appendChild(clone);
     });
 
-    if (data.a11yReportPath) {
-        const a11yLink = document.getElementById('view-a11y-report-link');
-        a11yLink.href = `./${data.a11yReportPath}`;
-        a11yLink.style.display = 'flex';
-    }
 
     // Description
     if (data.description) {
-        document.getElementById('card-description').style.display = 'block';
+        const card = document.getElementById('card-description');
+        card.classList.remove('hidden');
         document.getElementById('report-description').textContent = data.description;
     }
 
     // Helper method for array elements
     const renderList = (array, listId, cardId) => {
         if (array && array.length > 0) {
-            document.getElementById(cardId).style.display = 'block';
+            document.getElementById(cardId).classList.remove('hidden');
             const list = document.getElementById(listId);
             const tpl = document.getElementById('string-item-template');
             array.forEach((item) => {
@@ -117,15 +132,45 @@ function renderTestExecutionReport(data) {
     );
     renderList(filteredErrs, 'list-exceptions', 'card-exceptions');
 
-    if (data.videoPath) {
-        document.getElementById('card-video').style.display = 'block';
-        const source = document.getElementById('report-video-source');
-        source.src = data.videoPath;
-        source.parentElement.load();
+    // Normalize to an array of videos
+    const videos = Array.isArray(data.videoPath)
+        ? data.videoPath
+        : data.videoPath
+            ? [data.videoPath]
+            : [];
+
+    if (videos.length > 0) {
+        document.getElementById('card-video').classList.remove('hidden');
+        const container = document.getElementById('report-video-container');
+        container.innerHTML = '';
+
+        videos.forEach((vPath, idx) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '12px';
+
+            const label = document.createElement('div');
+            label.style.fontSize = '0.85rem';
+            label.style.color = 'var(--text-muted)';
+            label.style.marginBottom = '4px';
+            label.textContent = videos.length > 1 ? `Recording ${idx + 1}` : 'Recording';
+            wrapper.appendChild(label);
+
+            const videoEl = document.createElement('video');
+            videoEl.controls = true;
+            videoEl.style.width = '100%';
+
+            const source = document.createElement('source');
+            source.type = 'video/webm';
+            source.src = vPath;
+            videoEl.appendChild(source);
+
+            wrapper.appendChild(videoEl);
+            container.appendChild(wrapper);
+        });
     }
 
     if (data.screenshotPaths && data.screenshotPaths.length > 0) {
-        document.getElementById('card-screenshots').style.display = 'block';
+        document.getElementById('card-screenshots').classList.remove('hidden');
         const grid = document.getElementById('grid-screenshots');
         const tpl = document.getElementById('screenshot-template');
         data.screenshotPaths.forEach((p) => {
@@ -136,7 +181,7 @@ function renderTestExecutionReport(data) {
     }
 
     if (data.attachments && data.attachments.length > 0) {
-        document.getElementById('card-attachments').style.display = 'block';
+        document.getElementById('card-attachments').classList.remove('hidden');
         const list = document.getElementById('list-attachments');
         const tpl = document.getElementById('attachment-template');
         data.attachments.forEach((att) => {
@@ -150,9 +195,9 @@ function renderTestExecutionReport(data) {
 
     // Accessibility Success / Error Cards inside general test report
     if (data.a11yReportPath && data.a11yErrorCount === 0) {
-        document.getElementById('card-a11y-success').style.display = 'flex';
+        document.getElementById('card-a11y-success').classList.remove('hidden');
     } else if (data.a11yErrors && data.a11yErrors.length > 0) {
-        document.getElementById('card-a11y-errors').style.display = 'block';
+        document.getElementById('card-a11y-errors').classList.remove('hidden');
         const list = document.getElementById('list-a11y-errors');
         const tplError = document.getElementById('a11y-error-template');
         const tplInstance = document.getElementById('a11y-instance-template');
@@ -197,7 +242,7 @@ function renderTestExecutionReport(data) {
 function renderExecutionSummary(data) {
     const root = document.getElementById('report-summary-root');
     if (!root) return;
-    root.style.display = 'block';
+    root.classList.remove('hidden');
 
     // Hero Section
     document.getElementById('summary-status-badge').classList.add(`status-${data.status}`);
@@ -219,15 +264,13 @@ function renderExecutionSummary(data) {
 
     const browsers = Object.keys(data.browserSummaries);
 
-    const setElDisplay = (id, disp) => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = disp;
-    };
 
     if (data.totalA11yErrorCount > 0) {
-        setElDisplay('summary-global-a11y-box', 'flex');
+        const a11yBox = document.getElementById('summary-global-a11y-box');
+        if (a11yBox) a11yBox.classList.remove('hidden');
         setElText('summary-a11y-total', data.totalA11yErrorCount);
-        setElDisplay('global-errors-container', 'block');
+        const errContainer = document.getElementById('global-errors-container');
+        if (errContainer) errContainer.classList.remove('hidden');
 
         // Populate WCAG Error Cards
         const wcagGrid = document.getElementById('global-metrics-grid');
@@ -262,7 +305,7 @@ function renderExecutionSummary(data) {
             });
     } else {
         const successCard = document.getElementById('global-success-card');
-        successCard.style.display = 'block'; // Container block, layout inside is flex
+        if (successCard) successCard.classList.remove('hidden');
         const icon = document.getElementById('global-success-icon');
         const title = document.getElementById('global-success-title');
         const desc = document.getElementById('global-success-desc');
@@ -306,7 +349,8 @@ function renderExecutionSummary(data) {
         tabDiv.id = `tab-${browser}`;
 
         if (bStats.totalA11yErrorCount > 0) {
-            contentClone.querySelector('.browser-errors-container').style.display = 'block';
+            const bErrContainer = contentClone.querySelector('.browser-errors-container');
+            if (bErrContainer) bErrContainer.classList.remove('hidden');
             contentClone.querySelector('.browser-chart-title').textContent = capBrowser;
             contentClone.querySelector('.browser-chart-container').id =
                 `chart-${browser}-violations`;
@@ -338,7 +382,7 @@ function renderExecutionSummary(data) {
                 });
         } else {
             const sucContainer = contentClone.querySelector('.browser-success-container');
-            sucContainer.style.display = 'block'; // Container block, layout inside is flex
+            if (sucContainer) sucContainer.classList.remove('hidden');
             const bTitle = sucContainer.querySelector('.browser-success-title');
             if (bTitle) bTitle.textContent = `${capBrowser} Compliant`;
         }
@@ -400,13 +444,16 @@ function renderExecutionSummary(data) {
 
     // Render Charts if ApexCharts is loaded
     if (typeof ApexCharts !== 'undefined') {
-        if (data.totalA11yErrorCount > 0) {
+        const globalChartEl = document.getElementById('chart-global-violations');
+        if (globalChartEl && data.totalA11yErrorCount > 0) {
             renderBarChart('chart-global-violations', data.wcagErrors, data.colors);
         }
         browsers.forEach((browser) => {
-            if (data.browserSummaries[browser].totalA11yErrorCount > 0) {
+            const chartId = `chart-${browser}-violations`;
+            const browserChartEl = document.getElementById(chartId);
+            if (browserChartEl && data.browserSummaries[browser].totalA11yErrorCount > 0) {
                 renderBarChart(
-                    `chart-${browser}-violations`,
+                    chartId,
                     data.browserSummaries[browser].wcagErrors,
                     data.colors
                 );
@@ -421,7 +468,7 @@ function renderExecutionSummary(data) {
 function renderAccessibilityReport(injectedData) {
     const root = document.getElementById('accessibility-report-root');
     if (!root) return;
-    root.style.display = 'block';
+    root.classList.remove('hidden');
 
     document.title = 'Snap Ally - Accessibility Audit';
 
@@ -441,7 +488,14 @@ function renderAccessibilityReport(injectedData) {
             0
         );
     }
-    const videoPath = data.video || data.videoPath || '';
+    // Support either a single video or an array of videos
+    const videoArray = Array.isArray(data.video || data.videoPath)
+        ? data.video || data.videoPath
+        : data.video || data.videoPath
+            ? [data.video || data.videoPath]
+            : [];
+    const videoPath = videoArray[0] || '';
+    const browser = data.browser || injectedData.browser || (window.snapAllyData && window.snapAllyData.browser) || 'Unknown';
 
     // Hero Section
     const pageUrlEl = document.getElementById('a11y-page-url');
@@ -450,14 +504,19 @@ function renderAccessibilityReport(injectedData) {
     const timestampEl = document.getElementById('a11y-timestamp');
     if (timestampEl) timestampEl.textContent = timestamp;
 
+    const browserContainer = document.getElementById('a11y-browser-container');
+    const browserText = document.getElementById('a11y-browser-text');
+    if (browserContainer) browserContainer.classList.remove('hidden');
+    if (browserText) browserText.textContent = browser;
+
     if (failedCount === 0) {
         const passedPill = document.getElementById('a11y-pill-passed');
-        if (passedPill) passedPill.style.display = 'flex';
+        if (passedPill) passedPill.classList.remove('hidden');
         const successCard = document.getElementById('a11y-success-card');
-        if (successCard) successCard.style.display = 'flex';
+        if (successCard) successCard.classList.remove('hidden');
     } else {
         const failedPill = document.getElementById('a11y-pill-failed');
-        if (failedPill) failedPill.style.display = 'flex';
+        if (failedPill) failedPill.classList.remove('hidden');
         const failedCountEl = document.getElementById('a11y-failed-count');
         if (failedCountEl) failedCountEl.textContent = failedCount;
     }
@@ -469,11 +528,20 @@ function renderAccessibilityReport(injectedData) {
     }
 
     // Render video section if exists
-    if (videoPath) {
-        document.getElementById('a11y-video-card').style.display = 'block';
-        const source = document.getElementById('a11y-video-source');
-        source.src = videoPath;
-        source.parentElement.load();
+    if (videoArray.length > 0) {
+        const videoCard = document.getElementById('a11y-video-card');
+        if (videoCard) videoCard.classList.remove('hidden');
+
+        const videoList = document.getElementById('a11y-videos-list');
+        if (videoList) {
+            videoList.innerHTML = ''; // Clear fallback
+            videoArray.forEach((v) => {
+                const video = document.createElement('video');
+                video.controls = true;
+                video.innerHTML = `<source src="${v}" type="video/webm">Your browser does not support the video tag.`;
+                videoList.appendChild(video);
+            });
+        }
     }
 
     // Iterate over violations
@@ -525,7 +593,7 @@ function renderAccessibilityReport(injectedData) {
                 bClone.querySelector('.bug-snippet-text').textContent = snippetText;
 
                 // Parse steps for both the card display and the bug dialog
-                let stepsArray = node.steps || [];
+                let stepsArray = (node.steps && node.steps.length > 0) ? node.steps : (data.steps || []);
                 if (typeof stepsArray === 'string') {
                     try {
                         stepsArray = JSON.parse(stepsArray);
@@ -539,9 +607,10 @@ function renderAccessibilityReport(injectedData) {
                 const safeSnippet = escapeHtml(snippetText);
                 const wcag = escapeHtml(v.wcagRule || (v.tags ? v.tags.join(', ') : ''));
                 const safeStepsJson = encodeURIComponent(JSON.stringify(stepsArray));
+                const safeHelpUrl = escapeHtml(v.helpUrl || '');
                 btn.setAttribute(
                     'onclick',
-                    `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}', '${safeStepsJson}')`
+                    `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}', '${safeStepsJson}', '${safeHelpUrl}', '${escapeHtml(browser)}')`
                 );
 
                 const failSec = bClone.querySelector('.bug-failure-summary');
@@ -558,7 +627,7 @@ function renderAccessibilityReport(injectedData) {
 
                 if (node.screenshot || node.screenshotPath) {
                     const visSec = bClone.querySelector('.visual-evidence-section');
-                    visSec.style.display = 'block';
+                    visSec.classList.remove('hidden');
                     bClone.querySelector('.bug-screenshot').src =
                         node.screenshot || node.screenshotPath;
                 }
@@ -569,6 +638,10 @@ function renderAccessibilityReport(injectedData) {
             container.appendChild(vClone);
         });
     }
+
+    // Hide loader after rendering everything
+    const loader = document.getElementById('loader-overlay');
+    if (loader) loader.classList.add('hidden');
 }
 
 // ============================================================================
@@ -630,17 +703,15 @@ function escapeHtml(unsafe) {
 
 // Chart Generation
 function renderBarChart(elementId, wcagData, colors) {
-    const el = document.querySelector('#' + elementId);
-    if (!el) {
-        throw new Error('CRITICAL_NULL_ELEMENT_ID: ' + elementId);
-    }
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
     const wcagEntries = Object.entries(wcagData).sort((a, b) => b[1].count - a[1].count);
     if (wcagEntries.length === 0) return;
 
-    const chartColors = wcagEntries.map((e) => colors[e[1].severity] || '#ef4444');
+    const chartColors = wcagEntries.map((e) => (colors && colors[e[1].severity]) || '#ef4444');
 
-    new ApexCharts(document.querySelector('#' + elementId), {
+    new ApexCharts(el, {
         chart: { type: 'bar', height: 350, toolbar: { show: false } },
         series: [{ name: 'Violations', data: wcagEntries.map((e) => e[1].count) }],
         xaxis: {
@@ -752,7 +823,9 @@ window.generateAdoPayload = function (
     videoPath,
     snippet,
     wcag,
-    stepsJson
+    stepsJson,
+    helpUrl,
+    browser
 ) {
     const pat = sessionStorage.getItem('userToken');
     if (!pat && window.bootstrap) {
@@ -770,6 +843,8 @@ window.generateAdoPayload = function (
     const data = rawData.data || rawData;
     const currentUrl = document.getElementById('bugUrlPreview');
     if (currentUrl) currentUrl.textContent = data.pageUrl || data.pageKey || 'Resource';
+    const browserPreview = document.getElementById('bugBrowserPreview');
+    if (browserPreview) browserPreview.textContent = browser || 'Unknown';
 
     // Decode the reproduction steps passed from the violation card
     let reproSteps = [];
@@ -792,12 +867,27 @@ window.generateAdoPayload = function (
     }
 
     const failureHtml = `
-    <div style="font-family: monospace; background: #fffcf0; padding: 12px; border: 1px solid #e2e8f0;">
-      ${failureSummary ? failureSummary.replace(/\\n/g, '<br>') : 'Issue discovered via static analysis scans.'}
+    <div class="repro-section">
+        <div class="repro-section-label">Failure Message</div>
+        <div class="repro-mono-box">
+          ${failureSummary ? failureSummary.replace(/\\n/g, '<br>') : 'Issue discovered via static analysis scans.'}
+        </div>
     </div>
-    <br>
-    <div style="font-family: monospace; background: #fffcf0; padding: 12px; border: 1px solid #e2e8f0; overflow-x: auto;">
-      ${htmlSnippet ? htmlSnippet.replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'No DOM snippet available.'}
+    <div class="repro-section">
+        <div class="repro-section-label">How to Fix</div>
+        <div class="repro-hint-box">
+          <span class="material-symbols-outlined repro-hint-icon" aria-hidden="true">lightbulb</span>
+          <div>
+            <strong>${help || 'No recommendation available.'}</strong>
+            ${helpUrl ? `<br><a href="${helpUrl}" target="_blank" rel="noopener" class="repro-deque-link"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">open_in_new</span> View Axe Rule Documentation (deque.com)</a>` : ''}
+          </div>
+        </div>
+    </div>
+    <div class="repro-section">
+        <div class="repro-section-label">DOM Element</div>
+        <div class="repro-mono-box repro-code">
+          ${htmlSnippet ? htmlSnippet.replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'No DOM snippet available.'}
+        </div>
     </div>
   `;
 
@@ -805,11 +895,18 @@ window.generateAdoPayload = function (
     const stepsHtml = reproStepsHtml + failureHtml;
 
     document.getElementById('bugReproPreview').innerHTML = `
-    <div style="margin-bottom: 4px;"><b>Rule:</b> ${axeId} (${wcag})</div>
-    <div style="margin-bottom: 8px;"><b>Recommendation:</b> ${help}</div>
-    ${reproStepsHtml ? reproStepsHtml : ''}
-    <div style="border-top: 1px solid #e2e8f0; margin: 8px 0; padding-top: 8px;"><b>Failure Summary:</b></div>
-    ${failureHtml}
+    <div class="repro-preview-root">
+      <div class="repro-meta-pills">
+        <span class="repro-pill repro-pill-id">${axeId}</span>
+        <span class="repro-pill repro-pill-wcag">${wcag}</span>
+        <span class="repro-pill repro-pill-sev repro-pill-sev-${severity}">${severity}</span>
+      </div>
+      ${reproStepsHtml ? `<div class="repro-section">
+        <div class="repro-section-label">Reproduction Steps</div>
+        ${reproStepsHtml}
+      </div>` : ''}
+      ${failureHtml}
+    </div>
   `;
 
     const screenshotPreview = document.getElementById('bugScreenshotPreview');
@@ -826,21 +923,21 @@ window.generateAdoPayload = function (
         } else {
             screenshotPreview.src = `data:image/png;base64,${screenshotBase64}`;
         }
-        if (screenshotThumbContainer) screenshotThumbContainer.style.display = 'block';
+        if (screenshotThumbContainer) screenshotThumbContainer.classList.remove('hidden');
     } else {
-        if (screenshotThumbContainer) screenshotThumbContainer.style.display = 'none';
+        if (screenshotThumbContainer) screenshotThumbContainer.classList.add('hidden');
     }
 
     const videoThumbContainer = document.getElementById('videoThumbContainer');
     const videoPreview = document.getElementById('bugVideoPreview');
     if (videoPath) {
         if (videoPreview) videoPreview.src = videoPath;
-        if (videoThumbContainer) videoThumbContainer.style.display = 'block';
+        if (videoThumbContainer) videoThumbContainer.classList.remove('hidden');
     } else {
-        if (videoThumbContainer) videoThumbContainer.style.display = 'none';
+        if (videoThumbContainer) videoThumbContainer.classList.add('hidden');
     }
 
-    window.currentBugData = { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath };
+    window.currentBugData = { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath, browser };
 
     if (window.bootstrap) {
         const modal = bootstrap.Modal.getOrCreateInstance(
@@ -876,7 +973,7 @@ async function submitFinalBug() {
     const org = data.adoOrganization;
     const proj = data.adoProject;
     const pat = sessionStorage.getItem('userToken');
-    const { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath } = window.currentBugData;
+    const { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath, browser } = window.currentBugData;
 
     const title = document.getElementById('bugTitleInput').value;
     const severity = document.getElementById('bugSeverityInput').value;
@@ -914,6 +1011,7 @@ async function submitFinalBug() {
 
     const combinedReproHtml = `
     <div style="margin-bottom: 12px;"><b>Rule:</b> ${axeId} (${wcag})</div>
+    <div style="margin-bottom: 12px;"><b>Browser:</b> ${browser}</div>
     <div style="margin-bottom: 12px;"><b>Recommendation:</b> ${help}</div>
     <hr>
     <div style="margin-bottom: 8px;"><b>Failure Trace & Details:</b></div>

@@ -26,39 +26,27 @@
     </head>
 
     <body>
-        <div
-            id="loader-overlay"
-            style="
-                position: fixed;
-                inset: 0;
-                background: #fff;
-                z-index: 10000;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                transition: opacity 0.5s ease;
-                display: none;
-            "
-        >
+        <a href="#accessibility-report-root" class="skip-link">Skip to main content</a>
+
+        <div id="loader-overlay" class="loader-overlay hidden" aria-live="polite" aria-busy="true">
             <div class="loader-pulse">
-                <span class="material-symbols-outlined" style="font-size: 32px">query_stats</span>
+                <span class="material-symbols-outlined fs-32" aria-hidden="true">query_stats</span>
             </div>
             <div class="loader-text">Compiling Audit Results</div>
         </div>
 
-        <header>
-            <a href="#" class="brand" style="cursor: default; text-decoration: none">
-                <div class="brand-icon">
-                    <span class="material-symbols-outlined" style="font-size: 22px"
+        <header role="banner">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <span class="material-symbols-outlined fs-6"
                         >accessibility_new</span
                     >
                 </div>
                 <h1 class="brand-text">Accessibility Audit</h1>
-            </a>
-            <div class="header-actions" style="display: flex; gap: 16px; align-items: center">
+            </div>
+            <nav class="header-actions d-flex-align-center gap-16" aria-label="Quick Actions">
                 <a href="../summary.html" class="btn btn-link btn-sm btn-back">
-                    <span class="material-symbols-outlined btn-back-icon">arrow_back</span>
+                    <span class="material-symbols-outlined btn-back-icon" aria-hidden="true">arrow_back</span>
                     Back to Summary
                 </a>
                 <button
@@ -66,33 +54,39 @@
                     class="btn btn-outline-primary btn-sm btn-token"
                     data-bs-toggle="modal"
                     data-bs-target="#tokenModal"
-                >
-                    <span class="material-symbols-outlined btn-token-icon">key</span>
+                    aria-label="Manage ADO Token">
+                    <span class="material-symbols-outlined btn-token-icon" aria-hidden="true">key</span>
                     ADO Token
                 </button>
-            </div>
+            </nav>
         </header>
 
-        <div class="container" id="accessibility-report-root" style="display: none">
+        <main class="container hidden" id="accessibility-report-root">
             <!-- Hero Section -->
             <section class="page-hero">
                 <div class="hero-content">
                     <h2>Target Resource</h2>
                     <p class="page-url" id="a11y-page-url"></p>
+                    <div
+                        class="hero-meta mt-2 hidden"
+                        id="a11y-browser-container"
+                        style="font-size: 0.9rem; opacity: 0.8; font-family: Inter, sans-serif;"
+                    >
+                        <b>Browser:</b> <span id="a11y-browser-text"></span>
+                    </div>
                 </div>
                 <div class="stats-pills">
                     <div
-                        class="stat-pill stat-pill-passed"
+                        class="stat-pill stat-pill-passed hidden"
                         id="a11y-pill-passed"
-                        style="display: none"
                     >
-                        <span class="material-symbols-outlined" style="font-size: 20px"
+                        <span class="material-symbols-outlined fs-20"
                             >verified</span
                         >
                         No Violations
                     </div>
 
-                    <div class="stat-pill" id="a11y-pill-failed" style="display: none">
+                    <div class="stat-pill stat-pill-failed hidden" id="a11y-pill-failed">
                         <span class="material-symbols-outlined stat-pill-icon">bug_report</span>
                         <span><span id="a11y-failed-count"></span> Issues</span>
                     </div>
@@ -100,23 +94,20 @@
             </section>
 
             <!-- Video Card -->
-            <div class="video-card" id="a11y-video-card" style="display: none">
+            <div class="video-card hidden" id="a11y-video-card">
                 <div class="video-header">
                     <div class="video-icon-wrap">
                         <span class="material-symbols-outlined">videocam</span>
                     </div>
                     <h2 class="video-title">Execution Recording</h2>
                 </div>
-                <div class="video-container">
-                    <video controls>
-                        <source id="a11y-video-source" type="video/webm" />
-                        Your browser does not support the video tag.
-                    </video>
+                <div class="video-container" id="a11y-videos-list">
+                    <!-- Multiple videos will be injected here if available -->
                 </div>
             </div>
 
             <!-- Success State -->
-            <div class="success-verified-card" id="a11y-success-card" style="display: none">
+            <div class="success-verified-card hidden" id="a11y-success-card">
                 <div class="success-content-layout">
                     <div class="success-icon-container">
                         <span class="material-symbols-outlined">verified_user</span>
@@ -142,7 +133,7 @@
                             <span class="violation-rule-info">
                                 <span class="rule-name"></span>
                                 <span class="rule-sep">•</span>
-                                <span class="rule-wcag-tags" style="margin-left: 8px"></span>
+                                <span class="rule-wcag-tags ms-2"></span>
                             </span>
                         </div>
                         <span class="severity-badge"></span>
@@ -165,7 +156,7 @@
                             </div>
                         </div>
 
-                        <div class="instances-list" style="margin-top: 16px">
+                        <div class="instances-list mt-16">
                             <h4 class="instances-title">
                                 <span class="material-symbols-outlined instances-icon"
                                     >preview</span
@@ -187,17 +178,17 @@
                         data-bs-target=""
                         aria-expanded="false"
                     >
-                        <div class="d-flex align-items-center gap-3" style="max-width: 75%">
+                        <div class="d-flex-align-center gap-3 max-w-75">
                             <span class="material-symbols-outlined chevron">expand_more</span>
                             <div class="bug-snippet">
-                                <strong style="color: var(--primary)" class="bug-rule-name"></strong
+                                <strong class="text-primary bug-rule-name"></strong
                                 >:
                                 <span class="bug-snippet-text"></span>
                             </div>
                         </div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-bug log-bug-btn" type="button">
-                                <span class="material-symbols-outlined" style="font-size: 16px"
+                                <span class="material-symbols-outlined fs-16"
                                     >bug_report</span
                                 >
                                 Log Bug
@@ -208,18 +199,16 @@
                     <div id="" class="collapse bug-item-body-collapse">
                         <div class="bug-details-body">
                             <!-- Left: Repro Steps -->
-                            <div style="margin-bottom: 16px">
+                            <div class="mb-3">
                                 <div class="bug-section-title">Reproduction Steps</div>
-                                <div class="bug-content-box bug-failure-summary">
-                                    <span style="color: var(--text-muted); font-style: italic"
-                                        >No interaction steps recorded. Issue found via static
-                                        scan.</span
-                                    >
+                                <div class="bug-content-box bug-failure-summary text-muted fst-italic">
+                                    No interaction steps recorded. Issue found via static
+                                    scan.
                                 </div>
                             </div>
 
                             <!-- Right: Visual -->
-                            <div class="visual-evidence-section" style="display: none">
+                            <div class="visual-evidence-section hidden">
                                 <div class="bug-section-title">Visual Evidence</div>
                                 <div class="screenshot-container">
                                     <img class="bug-screenshot" alt="Violation Evidence" />
@@ -242,6 +231,7 @@
                                 type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
+                                aria-label="Close"
                             ></button>
                         </div>
                         <div class="modal-body modal-body-custom">
@@ -257,6 +247,7 @@
                                         class="form-control token-input"
                                         id="tokenInput"
                                         placeholder="Enter PAT Token"
+                                        aria-label="Personal Access Token"
                                         required
                                     />
                                 </div>
@@ -279,8 +270,7 @@
                     <div class="modal-header">
                         <div class="modal-title">
                             <span
-                                class="material-symbols-outlined"
-                                style="color: #cc293d; font-size: 24px"
+                                class="material-symbols-outlined text-critical fs-24"
                                 >bug_report</span
                             >
                             New Bug Entry - Azure DevOps
@@ -294,7 +284,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="ado-field-group">
-                            <label class="ado-form-label">Title</label>
+                            <label class="ado-form-label" for="bugTitleInput">Title</label>
                             <input
                                 type="text"
                                 id="bugTitleInput"
@@ -306,7 +296,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="ado-field-group">
-                                    <label class="ado-form-label">Severity</label>
+                                    <label class="ado-form-label" for="bugSeverityInput">Severity</label>
                                     <select id="bugSeverityInput" class="ado-form-input">
                                         <option value="critical">Critical (Priority 1)</option>
                                         <option value="serious">Serious (Priority 2)</option>
@@ -317,7 +307,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="ado-field-group">
-                                    <label class="ado-form-label">Target Area</label>
+                                    <label class="ado-form-label" for="bugAreaInput">Target Area</label>
                                     <input
                                         type="text"
                                         id="bugAreaInput"
@@ -332,23 +322,17 @@
                             <label class="ado-form-label">Reproduction Steps & Description</label>
                             <div
                                 id="bugReproPreview"
-                                class="ado-repro-preview"
-                                style="min-height: 150px"
+                                class="ado-repro-preview min-h-150"
                             ></div>
                         </div>
 
                         <!-- Visual Evidence - Single Column Full Width -->
                         <div
-                            class="ado-field-group"
-                            id="screenshotThumbContainer"
-                            style="display: none"
-                        >
+                            class="ado-field-group hidden"
+                            id="screenshotThumbContainer">
                             <label class="ado-form-label">
                                 <span
-                                    class="material-symbols-outlined"
-                                    style="font-size: 14px; vertical-align: middle"
-                                    >image</span
-                                >
+                                    class="material-symbols-outlined fs-14 v-align-middle">image</span>
                                 Violation Screenshot
                             </label>
                             <img
@@ -359,13 +343,10 @@
                             />
                         </div>
 
-                        <div class="ado-field-group" id="videoThumbContainer" style="display: none">
+                        <div class="ado-field-group hidden" id="videoThumbContainer">
                             <label class="ado-form-label">
                                 <span
-                                    class="material-symbols-outlined"
-                                    style="font-size: 14px; vertical-align: middle"
-                                    >videocam</span
-                                >
+                                    class="material-symbols-outlined fs-14 v-align-middle">videocam</span>
                                 Session Recording
                             </label>
                             <video id="bugVideoPreview" class="video-preview-player" controls>
@@ -373,51 +354,37 @@
                             </video>
                         </div>
 
-                        <div class="ado-field-group" style="margin-bottom: 0">
-                            <div
-                                class="ado-repro-preview"
-                                style="
-                                    font-size: 0.75rem;
-                                    background: #fffcf0;
-                                    border-color: #f9f0c3;
-                                    padding: 12px;
-                                    line-height: 1.5;
-                                "
-                            >
-                                <b>Environment:</b> Playwright engine • <b>URL:</b>
-                                <span
-                                    id="bugUrlPreview"
-                                    style="word-break: break-all; color: var(--primary)"
-                                ></span>
+                        <div class="ado-field-group mb-0">
+                            <div class="ado-repro-preview ado-repro-env">
+                                <b>Environment:</b> Playwright engine •
+                                <b>Browser:</b> <span id="bugBrowserPreview" class="text-primary me-2"></span>
+                                • <b>URL:</b>
+                                <span id="bugUrlPreview" class="text-primary break-all"></span>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button
                             type="button"
-                            class="btn-ado-secondary btn btn-outline-secondary"
-                            data-bs-dismiss="modal"
-                            style="border-radius: 12px; font-weight: 700"
-                        >
+                            class="btn-ado-secondary btn btn-outline-secondary rounded-12 fw-bold"
+                            data-bs-dismiss="modal">
                             Cancel
                         </button>
                         <button
                             type="button"
                             id="confirmBugBtn"
-                            class="btn-ado-primary btn btn-primary"
-                            style="border-radius: 12px; font-weight: 700"
-                        >
+                            class="btn-ado-primary btn btn-primary rounded-12 fw-bold">
                             Create Bug
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
 
         <footer>
             <div class="powered-by">Generated by <span class="badge-tool">Snap Ally</span></div>
             <div>
-                <span style="opacity: 0.7">&copy; <span id="year"></span> Snap Ally</span>
+                <span class="opacity-75">&copy; <span id="year"></span> Snap Ally</span>
             </div>
         </footer>
 

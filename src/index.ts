@@ -1,10 +1,10 @@
 import SnapAllyReporter from './SnapAllyReporter';
 
 export default SnapAllyReporter;
-export { scanA11y, checkAccessibility, A11yScannerOptions } from './A11yScanner';
-export { AccessibilityReporterOptions } from './SnapAllyReporter';
-export { A11yAuditOverlay } from './A11yAuditOverlay';
-export { A11yReportAssets } from './A11yReportAssets';
-export { A11yHtmlRenderer } from './A11yHtmlRenderer';
-export { A11yTimeUtils } from './A11yTimeUtils';
+export { SnapAllyReporter };
+export { scanA11y, checkAccessibility } from './core/Scanner';
+export { VisualReporter } from './core/VisualReporter';
+export { ReportAssets } from './core/ReportAssets';
+export { HtmlRenderer } from './core/HtmlRenderer';
+export { TimeUtils } from './utils/TimeUtils';
 export * from './models';
