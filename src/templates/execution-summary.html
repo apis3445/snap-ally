@@ -23,37 +23,27 @@
     </head>
 
     <body>
-        <header>
-            <a href="#" class="brand" style="cursor: default">
-                <div class="brand-icon">
-                    <span class="material-symbols-outlined" style="font-size: 22px"
+        <a href="#report-summary-root" class="skip-link">Skip to main content</a>
+        <header role="banner">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <span class="material-symbols-outlined fs-6"
                         >fact_check</span
                     >
                 </div>
                 <h1>Snap Ally Test Summary</h1>
-            </a>
+            </div>
         </header>
 
-        <div class="container" id="report-summary-root" style="display: none">
+        <main class="container hidden" id="report-summary-root">
             <!-- Hero Section -->
             <div class="summary-hero">
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px">
-                    <h2
-                        style="
-                            margin: 0;
-                            font-weight: 600;
-                            font-size: 1.4rem;
-                            color: var(--text-main);
-                        "
-                    >
+                <div class="d-flex-align-center gap-16 mb-2">
+                    <h2 class="m-0 fw-semibold fs-4 text-main">
                         Test Execution Summary
                     </h2>
                     <div class="status-badge" id="summary-status-badge">
-                        <span
-                            class="material-symbols-outlined"
-                            id="summary-status-icon"
-                            style="font-size: 16px"
-                        ></span>
+                        <span class="material-symbols-outlined fs-6" id="summary-status-icon"></span>
                         <span id="summary-status-text"></span>
                     </div>
                 </div>
@@ -79,12 +69,10 @@
             <!-- Global Tab Content -->
             <div id="tab-global" class="tab-content active">
                 <!-- Global Success -->
-                <div class="success-verified-card" id="global-success-card" style="display: none">
+                <div class="success-verified-card hidden" id="global-success-card">
                     <div class="success-content-layout">
                         <div class="success-icon-container">
-                            <span class="material-symbols-outlined" id="global-success-icon"
-                                >check_circle</span
-                            >
+                            <span class="material-symbols-outlined" id="global-success-icon">check_circle</span>
                             <div class="icon-pulse"></div>
                         </div>
                         <div class="success-text-group">
@@ -96,40 +84,26 @@
                                 your audited application.
                             </p>
                             <div class="success-badges">
-                                <span class="success-msg-badge"
-                                    ><span class="material-symbols-outlined">verified</span> 0
-                                    Violations Found</span
-                                >
-                                <span class="success-msg-badge"
-                                    ><span class="material-symbols-outlined"
-                                        >health_and_safety</span
-                                    >
-                                    100% Compliant</span
-                                >
+                                <span class="success-msg-badge"><span class="material-symbols-outlined">verified</span> 0
+                                    Violations Found</span>
+                                <span class="success-msg-badge"><span class="material-symbols-outlined">health_and_safety</span>
+                                    100% Compliant</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Global Errors -->
-                <div id="global-errors-container" style="display: none">
+                <div id="global-errors-container" class="hidden">
                     <div class="metrics-grid" id="global-metrics-grid"></div>
                     <div class="chart-box">
                         <div class="chart-title">
                             Global Violation Distribution
                             <div class="chart-legend">
-                                <span class="legend-item"
-                                    ><span class="legend-dot critical"></span> Critical</span
-                                >
-                                <span class="legend-item"
-                                    ><span class="legend-dot serious"></span> Serious</span
-                                >
-                                <span class="legend-item"
-                                    ><span class="legend-dot moderate"></span> Moderate</span
-                                >
-                                <span class="legend-item"
-                                    ><span class="legend-dot minor"></span> Minor</span
-                                >
+                                <span class="legend-item"><span class="legend-dot critical"></span> Critical</span>
+                                <span class="legend-item"><span class="legend-dot serious"></span> Serious</span>
+                                <span class="legend-item"><span class="legend-dot moderate"></span> Moderate</span>
+                                <span class="legend-item"><span class="legend-dot minor"></span> Minor</span>
                             </div>
                         </div>
                         <div id="chart-global-violations"></div>
@@ -143,24 +117,16 @@
             <template id="browser-tab-content-template">
                 <div class="tab-content">
                     <!-- Error State -->
-                    <div class="browser-errors-container" style="display: none">
+                    <div class="browser-errors-container hidden">
                         <div class="metrics-grid browser-metrics-grid"></div>
                         <div class="chart-box">
                             <div class="chart-title">
                                 <span class="browser-chart-title"></span> Violations by Rule
                                 <div class="chart-legend">
-                                    <span class="legend-item"
-                                        ><span class="legend-dot critical"></span> Critical</span
-                                    >
-                                    <span class="legend-item"
-                                        ><span class="legend-dot serious"></span> Serious</span
-                                    >
-                                    <span class="legend-item"
-                                        ><span class="legend-dot moderate"></span> Moderate</span
-                                    >
-                                    <span class="legend-item"
-                                        ><span class="legend-dot minor"></span> Minor</span
-                                    >
+                                    <span class="legend-item"><span class="legend-dot critical"></span> Critical</span>
+                                    <span class="legend-item"><span class="legend-dot serious"></span> Serious</span>
+                                    <span class="legend-item"><span class="legend-dot moderate"></span> Moderate</span>
+                                    <span class="legend-item"><span class="legend-dot minor"></span> Minor</span>
                                 </div>
                             </div>
                             <div class="browser-chart-container"></div>
@@ -168,15 +134,10 @@
                     </div>
 
                     <!-- Success State -->
-                    <div
-                        class="success-verified-card browser-success-container"
-                        style="display: none"
-                    >
+                    <div class="success-verified-card browser-success-container hidden">
                         <div class="success-content-layout">
                             <div class="success-icon-container">
-                                <span class="material-symbols-outlined success-hero-icon"
-                                    >verified_user</span
-                                >
+                                <span class="material-symbols-outlined success-hero-icon">verified_user</span>
                                 <div class="icon-pulse"></div>
                             </div>
                             <div class="success-text-group">
@@ -200,14 +161,12 @@
                             <span class="metric-rule"></span>
                             <span class="metric-sev"></span>
                         </div>
-                        <div class="metric-desc" style="display: none"></div>
+                        <div class="metric-desc hidden"></div>
                     </div>
                     <div class="metric-footer">
                         <div class="metric-count"></div>
-                        <a target="_blank" class="btn-guide" style="display: none">
-                            <span class="material-symbols-outlined" style="font-size: 16px"
-                                >menu_book</span
-                            >
+                        <a target="_blank" class="btn-guide hidden">
+                            <span class="material-symbols-outlined fs-16">menu_book</span>
                             Guide
                         </a>
                     </div>
@@ -215,15 +174,8 @@
             </template>
 
             <!-- Test Suite Details Accordion -->
-            <div class="results-list" style="margin-top: 40px">
-                <h2
-                    style="
-                        font-family: 'Outfit', sans-serif;
-                        font-size: 1.25rem;
-                        margin-bottom: 24px;
-                        color: var(--text-main);
-                    "
-                >
+            <div class="results-list mt-5">
+                <h2 class="section-heading-lg mb-4 text-main">
                     Test Suite Details
                 </h2>
                 <div id="accordion-container"></div>
@@ -248,36 +200,18 @@
                             <span class="browser-chip"></span>
                         </div>
                         <div class="test-meta">
-                            <span
-                                class="err-badge"
-                                style="
-                                    display: none;
-                                    background: #fee2e2;
-                                    color: #ef4444;
-                                    font-size: 0.7rem;
-                                    font-weight: 800;
-                                    padding: 2px 8px;
-                                    border-radius: 6px;
-                                "
-                            ></span>
-                            <div
-                                class="test-dur"
-                                style="
-                                    font-size: 0.8rem;
-                                    color: var(--text-muted);
-                                    font-weight: 700;
-                                "
-                            ></div>
+                            <span class="err-badge hidden"></span>
+                            <div class="test-dur text-muted-sm fw-bold"></div>
                         </div>
                     </div>
                 </a>
             </template>
-        </div>
+        </main>
 
         <footer>
             <div class="powered-by">Generated by <span class="badge-tool">Snap Ally</span></div>
             <div>
-                <span style="opacity: 0.7">&copy; <span id="year"></span> Snap Ally</span>
+                <span class="opacity-75">&copy; <span id="year"></span> Snap Ally</span>
             </div>
         </footer>
 
