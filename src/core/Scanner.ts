@@ -31,7 +31,7 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerO
         (typeof r[0] === 'string' &&
             (r[0].includes('SnapAllyReporter') || r[0].endsWith('SnapAllyReporter.ts')))
     );
-    const globalOptions = reporterConfig && Array.isArray(reporterConfig) ? (reporterConfig[1] as ReporterOptions) : {};
+    const globalOptions: ReporterOptions = (Array.isArray(reporterConfig) ? (reporterConfig[1] ?? {}) : {}) as ReporterOptions;
 
     // 2. Resolve final options (local > global > default)
     const showTerminal = options.verbose ?? globalOptions.verbose ?? true;

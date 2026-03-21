@@ -50,7 +50,7 @@ class SnapAllyReporter implements Reporter {
     private readonly testGlobalCounts: Record<string, number> = {};
 
     constructor(options: ReporterOptions = {}) {
-        this.options = options;
+        this.options = { verbose: true, consoleLog: true, ...options };
         this.outputFolder = path.resolve(process.cwd(), options.outputFolder || 'steps-report');
         this.validateOutputFolder(this.outputFolder);
         this.colors = {
