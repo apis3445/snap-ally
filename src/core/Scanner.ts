@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, TestInfo } from '@playwright/test';
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { VisualReporter } from './VisualReporter';
-import { Violation, ReportData, Target, ScannerOptions, DEFAULT_COLORS, getSeverityColor } from '../models';
+import { Violation, ReportData, Target, ScannerOptions, ReporterOptions, DEFAULT_COLORS, getSeverityColor } from '../models';
 import { TimeUtils } from '../utils/TimeUtils';
 
 /**
@@ -25,8 +25,17 @@ function sanitizePageKey(input: string): string {
  * Performs an accessibility audit using Axe and Lighthouse.
  */
 export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerOptions = {}) {
-    const showTerminal = options.verbose ?? true;
-    const showBrowser = options.consoleLog ?? true;
+    // 1. Find reporter config for global defaults
+    const reporterConfig = testInfo.config.reporter.find((r) =>
+        Array.isArray(r) &&
+        (typeof r[0] === 'string' &&
+            (r[0].includes('SnapAllyReporter') || r[0].endsWith('SnapAllyReporter.ts')))
+    );
+    const globalOptions = reporterConfig && Array.isArray(reporterConfig) ? (reporterConfig[1] as ReporterOptions) : {};
+
+    // 2. Resolve final options (local > global > default)
+    const showTerminal = options.verbose ?? globalOptions.verbose ?? true;
+    const showBrowser = options.consoleLog ?? globalOptions.consoleLog ?? true;
     const rawPageKey = options.pageKey || page.url();
     const pageKey = sanitizePageKey(rawPageKey);
     const overlay = new VisualReporter(page);
@@ -97,17 +106,11 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerO
         }
     }
 
-    expect
-        .soft(violationCount, `Accessibility audit failed with ${violationCount} violations.`)
-        .toBe(0);
+    await test.step('Check Accessibility', async () => {
+        expect.soft(violationCount).toBe(0);
+    });
 
-    const reporterConfig = testInfo.config.reporter.find((r) =>
-        Array.isArray(r) &&
-        (typeof r[0] === 'string' &&
-            (r[0].includes('SnapAllyReporter') || r[0].endsWith('src/SnapAllyReporter.ts')))
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const customColors = reporterConfig && Array.isArray(reporterConfig) ? (reporterConfig[1] as any)?.colors : undefined;
+    const customColors = globalOptions?.colors;
 
     const errors: Violation[] = [];
 
