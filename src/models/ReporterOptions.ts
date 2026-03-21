@@ -20,6 +20,18 @@ export interface ReporterOptions {
     };
 
     /**
+     * Whether to log violations to the terminal.
+     * @default true
+     */
+    verbose?: boolean;
+
+    /**
+     * Whether to log violations to the browser console.
+     * @default true
+     */
+    consoleLog?: boolean;
+
+    /**
      * Azure DevOps integration options.
      */
     ado?: {

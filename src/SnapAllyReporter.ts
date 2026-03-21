@@ -11,6 +11,9 @@ import {
     ResolvedColors,
     DEFAULT_COLORS,
     ReporterOptions,
+    ReportData,
+    Violation,
+    Target,
 } from './models';
 
 /**
@@ -47,7 +50,7 @@ class SnapAllyReporter implements Reporter {
     private readonly testGlobalCounts: Record<string, number> = {};
 
     constructor(options: ReporterOptions = {}) {
-        this.options = options;
+        this.options = { verbose: true, consoleLog: true, ...options };
         this.outputFolder = path.resolve(process.cwd(), options.outputFolder || 'steps-report');
         this.validateOutputFolder(this.outputFolder);
         this.colors = {
@@ -75,7 +78,7 @@ class SnapAllyReporter implements Reporter {
         // Prevent deletion of current working directory
         if (normalizedPath === normalizedCwd) {
             throw new Error(
-                `[SnapAlly] Invalid outputFolder: Cannot delete the current working directory. ` +
+                '[SnapAlly] Invalid outputFolder: Cannot delete the current working directory. ' +
                 `Resolved path: "${resolvedPath}"`
             );
         }
@@ -83,7 +86,7 @@ class SnapAllyReporter implements Reporter {
         // Prevent deletion of parent directories
         if (normalizedCwd.startsWith(normalizedPath + path.sep) || normalizedCwd.startsWith(normalizedPath + '/')) {
             throw new Error(
-                `[SnapAlly] Invalid outputFolder: Cannot delete a parent directory of the current working directory. ` +
+                '[SnapAlly] Invalid outputFolder: Cannot delete a parent directory of the current working directory. ' +
                 `Resolved path: "${resolvedPath}"`
             );
         }
@@ -92,7 +95,7 @@ class SnapAllyReporter implements Reporter {
         const pathSegments = normalizedPath.split(path.sep).filter(s => s.length > 0);
         if (pathSegments.length <= 1) {
             throw new Error(
-                `[SnapAlly] Invalid outputFolder: Path is too close to root directory. ` +
+                '[SnapAlly] Invalid outputFolder: Path is too close to root directory. ' +
                 `Resolved path: "${resolvedPath}"`
             );
         }
@@ -100,7 +103,7 @@ class SnapAllyReporter implements Reporter {
         // Ensure the path is within the current working directory (safest approach)
         if (!normalizedPath.startsWith(normalizedCwd + path.sep) && !normalizedPath.startsWith(normalizedCwd + '/')) {
             throw new Error(
-                `[SnapAlly] Invalid outputFolder: Path must be within the current working directory. ` +
+                '[SnapAlly] Invalid outputFolder: Path must be within the current working directory. ' +
                 `Resolved path: "${resolvedPath}", CWD: "${cwd}"`
             );
         }
@@ -147,13 +150,11 @@ class SnapAllyReporter implements Reporter {
         const attachments = this.assetsManager.copyAllOtherAttachments(result, testFolder);
 
         const a11yAttachment = result.attachments.find((a) => a.name === 'A11y');
-        if (a11yAttachment) {
-            console.log(`[SnapAlly] Found A11y attachment for project: ${(test as TestCase & { _projectId?: string })._projectId}`);
-        } else {
+        if (!a11yAttachment && this.options.verbose) {
             console.warn(`[SnapAlly] A11y attachment missing for test: ${test.title}. Available: ${result.attachments.map(a => a.name).join(', ')}`);
         }
 
-        let a11yData: any = null;
+        let a11yData: unknown = null;
         if (a11yAttachment && a11yAttachment.body) {
             try {
                 a11yData = JSON.parse(a11yAttachment.body.toString());
@@ -163,17 +164,15 @@ class SnapAllyReporter implements Reporter {
         }
 
         // Handle cases where a11yData might be the direct ReportData or wrapped in a data property
-        const actualData = a11yData?.data || a11yData;
-        const violations = actualData?.a11yErrors || actualData?.violations || [];
-        const a11yErrorCount = violations.reduce((acc: number, curr: any) => acc + (curr.total || curr.target?.length || curr.nodes?.length || 0), 0);
+        const actualData = (a11yData && typeof a11yData === 'object' && 'data' in a11yData ? (a11yData as { data: ReportData }).data : a11yData) as ReportData | null;
+        const violations = actualData?.a11yErrors || (actualData as unknown as { violations: Violation[] })?.violations || [];
+        const a11yErrorCount = violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
 
         const filteredSteps = (() => {
-            const sRaw = result.steps.map(s => s.title);
             const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot'];
             const filtered = result.steps
                 .filter((s) => !blocklist.some(b => s.title.includes(b)))
                 .map((s) => s.title);
-            console.log(`[SnapAlly] Steps for ${test.title}: Raw=${sRaw.length}, Filtered=${filtered.length}`);
             return filtered;
         })();
 
@@ -188,16 +187,15 @@ class SnapAllyReporter implements Reporter {
             status: result.status,
             statusIcon: this.getStatusIcon(result.status),
             browser: (() => {
-                if (test.outcome() === 'skipped') return 'n/a';
-                const bName = (test as any)._projectId || 
-                             test.parent?.project()?.name || 
-                             (test as any).projectName ||
-                             'chromium';
-                return bName;
+                const bName = (test as unknown as { _projectId?: string })._projectId ||
+                    test.parent?.project()?.name ||
+                    (test as unknown as { projectName?: string }).projectName ||
+                    'chromium';
+                return test.outcome() === 'skipped' ? 'n/a' : bName;
             })(),
-            adoOrganization: this.options.ado?.organization || (actualData as any)?.adoOrganization,
-            adoProject: this.options.ado?.project || (actualData as any)?.adoProject,
-            adoAreaPath: this.options.ado?.areaPath || (actualData as any)?.adoAreaPath,
+            adoOrganization: this.options.ado?.organization || actualData?.adoOrganization,
+            adoProject: this.options.ado?.project || actualData?.adoProject,
+            adoAreaPath: this.options.ado?.areaPath || actualData?.adoAreaPath,
             timestamp: new Date().toLocaleString(),
             pageUrl: actualData?.pageUrl || actualData?.pageKey || 'Resource',
             tags: [], // Extract from test tags if available
@@ -208,9 +206,9 @@ class SnapAllyReporter implements Reporter {
             screenshotPaths,
             attachments,
             errors: result.errors.map((e) => this.renderer.ansiToHtml(e.message || '')),
-            a11yErrors: violations.map((v: any) => ({
+            a11yErrors: violations.map((v: Violation) => ({
                 ...v,
-                target: (v.target || []).map((t: any) => ({
+                target: (v.target || []).map((t: Target) => ({
                     ...t,
                     steps: (t.steps && t.steps.length > 0) ? t.steps : filteredSteps
                 }))
@@ -221,16 +219,16 @@ class SnapAllyReporter implements Reporter {
 
         const reportFileName = 'report.html';
         const a11yReportFileName = 'accessibility-report.html';
-        
+
         testResults.executionReportPath = `${testFolderName}/${reportFileName}`;
-        
+
         // Generate separate accessibility report if there are a11y errors
         if (violations.length > 0) {
             testResults.a11yReportPath = `${testFolderName}/${a11yReportFileName}`;
             const a11yReportPath = path.join(testFolder, a11yReportFileName);
-            
+
             console.log(`[SnapAlly] Generating A11y report for ${test.title} (Browser: ${testResults.browser})`);
-            
+
             await this.renderer.render(
                 'accessibility-report.html',
                 testResults as unknown as Record<string, unknown>,
@@ -239,8 +237,8 @@ class SnapAllyReporter implements Reporter {
             );
         }
 
-        console.log(`[SnapAlly] Data state for "${test.title}": browser=${testResults.browser}, a11yErrors=${testResults.a11yErrors?.length || 0}`);
-        
+        // Removed debug logging of internal data state
+
         const reportPath = path.join(testFolder, reportFileName);
         await this.renderer.render(
             'test-execution-report.html',
@@ -310,10 +308,10 @@ class SnapAllyReporter implements Reporter {
         }
 
         const testKey = test.titlePath().join(' > ');
-        const violations = result.a11yErrors || (result as any).violations;
+        const violations = result.a11yErrors || (result as unknown as { violations: Violation[] }).violations;
         if (violations && violations.length > 0) {
-            const count = result.a11yErrorCount || violations.reduce((acc: number, curr: any) => acc + (curr.total || curr.target?.length || curr.nodes?.length || 0), 0);
-            
+            const count = result.a11yErrorCount || violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
+
             // De-duplicate global count across browsers for same test case
             const prevTestGlobalCount = this.testGlobalCounts[testKey] || 0;
             if (count > prevTestGlobalCount) {
@@ -325,13 +323,13 @@ class SnapAllyReporter implements Reporter {
 
             for (const err of violations) {
                 const ruleId = err.id;
-                const occCount = (err.total || err.target?.length || err.nodes?.length || 0);
+                const occCount = (err.total || err.target?.length || (err as unknown as { nodes?: unknown[] }).nodes?.length || 0);
 
                 // Update global wcagErrors (de-duplicated)
                 if (!this.executionSummary.wcagErrors[ruleId]) {
                     this.executionSummary.wcagErrors[ruleId] = {
                         count: 0,
-                        severity: err.severity || err.impact,
+                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
                         helpUrl: err.helpUrl,
                         description: err.description,
                     };
@@ -339,7 +337,7 @@ class SnapAllyReporter implements Reporter {
 
                 if (!this.testRuleCounts[testKey]) this.testRuleCounts[testKey] = {};
                 const prevRuleOccCount = this.testRuleCounts[testKey][ruleId] || 0;
-                
+
                 if (occCount > prevRuleOccCount) {
                     this.executionSummary.wcagErrors[ruleId].count += (occCount - prevRuleOccCount);
                     this.testRuleCounts[testKey][ruleId] = occCount;
@@ -349,7 +347,7 @@ class SnapAllyReporter implements Reporter {
                 if (!bSummary.wcagErrors[ruleId]) {
                     bSummary.wcagErrors[ruleId] = {
                         count: 0,
-                        severity: err.severity || err.impact,
+                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
                         helpUrl: err.helpUrl,
                         description: err.description,
                     };

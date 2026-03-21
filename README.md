@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/snap-ally.svg)](https://www.npmjs.com/package/snap-ally)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U7U1U2V3V)
 
 A powerful, developer-friendly Playwright reporter for **Accessibility testing** using Axe-core. Beyond just reporting, it provides visual evidence to help developers fix accessibility issues faster.
 
@@ -60,15 +61,18 @@ export default defineConfig({
                 outputFolder: 'a11y-report',
                 // Optional: Visual Customization
                 colors: {
-                    critical: '#dc2626',
-                    serious: '#ea580c',
-                    moderate: '#f59e0b',
-                    minor: '#0ea5e9',
+                    critical: '#b91c1c',
+                    serious: '#c2410c',
+                    moderate: '#a16207',
+                    minor: '#1e40af',
                 },
+                verbose: true,      // Show in terminal
+                consoleLog: true,   // Show in browser console
                 // Optional: Azure DevOps Integration
                 ado: {
                     organization: 'your-org',
                     project: 'your-project',
+                    areaPath: 'your-project\\your-team', // Optional: Define where bugs should be created
                 },
             },
         ],
@@ -80,20 +84,20 @@ export default defineConfig({
 
 ## <span aria-hidden="true">📖</span> Usage
 
-Import and use `scanA11y` within your Playwright tests:
+Import and use `checkAccessibility` within your Playwright tests:
 
 ```typescript
 import { test } from '@playwright/test';
-import { scanA11y } from 'snap-ally';
+import { checkAccessibility } from 'snap-ally';
 
 test('verify page accessibility', async ({ page }, testInfo) => {
     await page.goto('https://example.com');
 
     // Basic scan
-    await scanA11y(page, testInfo);
+    await checkAccessibility(page, testInfo);
 
     // Advanced scan with configuration
-    await scanA11y(page, testInfo, {
+    await checkAccessibility(page, testInfo, {
         verbose: true, // Log results to terminal
         consoleLog: true, // Log results to browser console
         pageKey: 'Homepage', // Custom name for the report file
@@ -113,13 +117,16 @@ test('verify page accessibility', async ({ page }, testInfo) => {
 
 | Option             | Type     | Description                                                     |
 | ------------------ | -------- | --------------------------------------------------------------- |
-| `outputFolder`     | `string` | Where to save the reports. Defaults to `steps-report`.          |
-| `colors`           | `object` | Customize severity colors (critical, serious, moderate, minor). |
-| `ado`              | `object` | Azure DevOps configuration for deep linking.                    |
+| `outputFolder`     | `string`  | Where to save the reports. Defaults to `steps-report`.          |
+| `colors`           | `object`  | Customize severity colors (critical, serious, moderate, minor). |
+| `verbose`          | `boolean` | **Default**: `true`. Show violations in terminal.               |
+| `consoleLog`       | `boolean` | **Default**: `true`. Show violations in browser console.        |
+| `ado`              | `object`  | Azure DevOps configuration for deep linking.                    |
 | `ado.organization` | `string` | Your Azure DevOps organization name.                            |
 | `ado.project`      | `string` | Your Azure DevOps project name.                                 |
+| `ado.areaPath`     | `string` | Optional: The Area Path where bugs should be created.           |
 
-### `scanA11y` Options
+### `checkAccessibility` Options
 
 | Option       | Type       | Description                                                                |
 | ------------ | ---------- | -------------------------------------------------------------------------- |

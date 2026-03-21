@@ -711,8 +711,10 @@ function renderBarChart(elementId, wcagData, colors) {
 
     const chartColors = wcagEntries.map((e) => (colors && colors[e[1].severity]) || '#ef4444');
 
+    const chartHeight = 80 + (wcagEntries.length * 50);
+
     new ApexCharts(el, {
-        chart: { type: 'bar', height: 350, toolbar: { show: false } },
+        chart: { type: 'bar', height: chartHeight, toolbar: { show: false } },
         series: [{ name: 'Violations', data: wcagEntries.map((e) => e[1].count) }],
         xaxis: {
             categories: wcagEntries.map((e) => e[0]),
@@ -733,7 +735,7 @@ function renderBarChart(elementId, wcagData, colors) {
             bar: {
                 borderRadius: 6,
                 horizontal: true,
-                barHeight: '70%',
+                barHeight: wcagEntries.length === 1 ? '35%' : wcagEntries.length <= 3 ? '50%' : '75%',
                 distributed: true,
                 dataLabels: { position: 'top' },
             },

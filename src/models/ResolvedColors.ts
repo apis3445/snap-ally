@@ -8,10 +8,10 @@ export interface ResolvedColors {
 
 /** Default severity colors used when the user doesn't override them. */
 export const DEFAULT_COLORS: Readonly<ResolvedColors> = {
-    critical: '#dc2626', // Power Red
-    serious: '#ea580c',  // Deep Orange
-    moderate: '#f59e0b', // Amber/Honey
-    minor: '#f0f06f',    // Ocean Blue (Updated to Yellow per user request)
+    critical: '#b91c1c', // Deep Red
+    serious: '#c2410c',  // Deep Orange
+    moderate: '#a16207', // Dark Amber
+    minor: '#1e40af',    // Royal Blue
 };
 
 /** Default fallback color for unknown severities. */

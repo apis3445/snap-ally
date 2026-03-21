@@ -12,12 +12,6 @@ export default defineConfig({
             './src/SnapAllyReporter.ts',
             {
                 outputFolder: 'steps-report',
-                colors: {
-                    critical: '#ff0000',
-                    serious: '#00ff00',
-                    moderate: '#0000ff',
-                    minor: '#f0f06f',
-                },
                 ado: {
                     organization: 'wbi1521',
                     project: 'Angular',

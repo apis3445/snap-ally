@@ -1,6 +1,14 @@
+## [1.0.0] - 2026-03-21
+
 ### Changed
 - Improved Azure DevOps bug creation by supporting configurable area paths and more robust attachment handling.
 - Expanded Playwright test coverage by adding additional desktop browser projects.
+- Added global `verbose` and `consoleLog` configuration options to the reporter.
+- Re-branded `checkAccessibility` as the primary function in documentation.
+- Improved report step titles to avoid "failed with 0" messages.
+- Updated default color palette to high-contrast versions for better accessibility.
+- Optimized violation distribution chart height and bar thickness for fewer items.
+- Removed internal debug logs from the terminal output.
 
 ## 2026-03-14
 
