@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { FullConfig } from 'playwright/test';
-import { Reporter, TestCase, TestResult, FullResult } from 'playwright/types/testReporter';
+import type { FullConfig, Reporter, TestCase, TestResult, FullResult } from '@playwright/test/reporter';
 import { HtmlRenderer } from './core/HtmlRenderer';
 import { ReportAssets } from './core/ReportAssets';
 import { TimeUtils } from './utils/TimeUtils';
@@ -50,6 +49,7 @@ class SnapAllyReporter implements Reporter {
     constructor(options: ReporterOptions = {}) {
         this.options = options;
         this.outputFolder = path.resolve(process.cwd(), options.outputFolder || 'steps-report');
+        this.validateOutputFolder(this.outputFolder);
         this.colors = {
             critical: options.colors?.critical || DEFAULT_COLORS.critical,
             serious: options.colors?.serious || DEFAULT_COLORS.serious,
@@ -61,6 +61,49 @@ class SnapAllyReporter implements Reporter {
 
     printsToStdio(): boolean {
         return true;
+    }
+
+    /**
+     * Validates that the output folder is safe to delete.
+     * Prevents accidental deletion of critical directories like repo root, parent dirs, or system paths.
+     */
+    private validateOutputFolder(resolvedPath: string): void {
+        const cwd = process.cwd();
+        const normalizedPath = path.normalize(resolvedPath);
+        const normalizedCwd = path.normalize(cwd);
+
+        // Prevent deletion of current working directory
+        if (normalizedPath === normalizedCwd) {
+            throw new Error(
+                `[SnapAlly] Invalid outputFolder: Cannot delete the current working directory. ` +
+                `Resolved path: "${resolvedPath}"`
+            );
+        }
+
+        // Prevent deletion of parent directories
+        if (normalizedCwd.startsWith(normalizedPath + path.sep) || normalizedCwd.startsWith(normalizedPath + '/')) {
+            throw new Error(
+                `[SnapAlly] Invalid outputFolder: Cannot delete a parent directory of the current working directory. ` +
+                `Resolved path: "${resolvedPath}"`
+            );
+        }
+
+        // Prevent deletion of root or near-root directories
+        const pathSegments = normalizedPath.split(path.sep).filter(s => s.length > 0);
+        if (pathSegments.length <= 1) {
+            throw new Error(
+                `[SnapAlly] Invalid outputFolder: Path is too close to root directory. ` +
+                `Resolved path: "${resolvedPath}"`
+            );
+        }
+
+        // Ensure the path is within the current working directory (safest approach)
+        if (!normalizedPath.startsWith(normalizedCwd + path.sep) && !normalizedPath.startsWith(normalizedCwd + '/')) {
+            throw new Error(
+                `[SnapAlly] Invalid outputFolder: Path must be within the current working directory. ` +
+                `Resolved path: "${resolvedPath}", CWD: "${cwd}"`
+            );
+        }
     }
 
     onBegin(config: FullConfig) {

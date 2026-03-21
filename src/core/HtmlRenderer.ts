@@ -56,6 +56,12 @@ export class HtmlRenderer {
         // Final cleanup of any potential remaining dummy scripts
         html = html.replace(/<script src="data-[^>]*\.js"><\/script>/, '');
 
+        // Ensure the output directory exists before writing
+        const outputDir = path.dirname(outputFileName);
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
         fs.writeFileSync(outputFileName, html, 'utf8');
     }
 

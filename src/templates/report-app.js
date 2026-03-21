@@ -85,7 +85,7 @@ function renderTestExecutionReport(data) {
     // Show verified badge only if no errors and no path-reported violations
     const hasA11yErrors = (data.a11yErrorCount > 0) || (data.a11yErrors && data.a11yErrors.length > 0);
     if (data.a11yReportPath && !hasA11yErrors) {
-        document.getElementById('report-a11y-verified').style.display = 'flex';
+        document.getElementById('report-a11y-verified').classList.remove('hidden');
     }
 
     document.getElementById('report-duration').textContent = data.duration;
@@ -213,7 +213,7 @@ function renderTestExecutionReport(data) {
             if (error.description) {
                 const desc = clone.querySelector('.desc-text');
                 desc.textContent = error.description;
-                desc.style.display = 'block';
+                desc.classList.remove('hidden');
             }
             clone.querySelector('.occ-count').textContent = error.total;
 
@@ -289,7 +289,7 @@ function renderExecutionSummary(data) {
                 if (info.description) {
                     const desc = clone.querySelector('.metric-desc');
                     desc.textContent = info.description;
-                    desc.style.display = 'block';
+                    desc.classList.remove('hidden');
                 }
 
                 const count = clone.querySelector('.metric-count');
@@ -299,7 +299,7 @@ function renderExecutionSummary(data) {
                 if (info.helpUrl) {
                     const btn = clone.querySelector('.btn-guide');
                     btn.href = info.helpUrl;
-                    btn.style.display = 'inline-flex';
+                    btn.classList.remove('hidden');
                 }
                 wcagGrid.appendChild(clone);
             });
@@ -372,7 +372,7 @@ function renderExecutionSummary(data) {
                     if (info.description) {
                         const desc = mClone.querySelector('.metric-desc');
                         desc.textContent = info.description;
-                        desc.style.display = 'block';
+                        desc.classList.remove('hidden');
                     }
 
                     const count = mClone.querySelector('.metric-count');
