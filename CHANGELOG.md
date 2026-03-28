@@ -1,3 +1,9 @@
+## [1.0.1] - 2026-03-28 [*](https://github.com/apis3445/snap-ally/pull/20)
+
+### Changed
+- Updated the README demo video link.
+- Bumped package version to 1.0.1.
+
 ## [1.0.0] - 2026-03-21
 
 ### Changed
