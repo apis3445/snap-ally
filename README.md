@@ -23,7 +23,7 @@ I believe that with relatively simple changes in HTML, good color contrast, amon
 
 ## 📺 Demo
 
-**[▶️ Watch the Demo Video](https://www.loom.com/share/853c04f1f76242a699e8f82e54733007)**
+**[▶️ Watch the Demo Video](https://youtu.be/dAncKfVHHGA?si=I3_I2qh_LBHhKfaz)**
 
 ---
 

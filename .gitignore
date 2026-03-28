@@ -51,9 +51,10 @@ temp/
 *.tmp
 
 # Package manager
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Lockfiles are now committed to ensure deterministic CI builds
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
 
 steps-report/
 playwright-report/
