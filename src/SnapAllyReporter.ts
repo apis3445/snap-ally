@@ -169,7 +169,7 @@ class SnapAllyReporter implements Reporter {
         const a11yErrorCount = violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
 
         const filteredSteps = (() => {
-            const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot'];
+            const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot', 'Scroll into view', 'Bounding box'];
             const filtered = result.steps
                 .filter((s) => !blocklist.some(b => s.title.includes(b)))
                 .map((s) => s.title);

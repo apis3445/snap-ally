@@ -1,4 +1,5 @@
 export * from './Violation';
+export * from './BannerInfo';
 export * from './ReportData';
 export * from './TestResults';
 export * from './ScannerOptions';

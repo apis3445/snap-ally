@@ -164,6 +164,10 @@ Automated accessibility testing with Axe-core detects approximately **30–40% o
 
 snap-ally automates the "easy wins" in your CI/CD pipeline so your team can focus manual effort on the complex interactions that tools cannot evaluate.
 
+### Video missing in the VS Code Playwright extension
+
+If the report has no video when you run a test from the **VS Code Playwright extension**, uncheck **Show browser** in the Testing sidebar and run again. Playwright saves the video only when the browser context closes, and the extension's "Show browser" mode keeps a persistent context alive, so no video is produced (a [known Playwright behavior](https://github.com/microsoft/playwright/issues/33155), not a snap-ally bug). Running from the terminal (`npx playwright test`) and CI are unaffected.
+
 ---
 
 ## <span aria-hidden="true">🤝</span> Contributing
