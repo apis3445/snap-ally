@@ -1,13 +1,14 @@
-import type { Locator } from '@playwright/test';
-
 /**
  * Options for the accessibility scanner.
  */
 export interface ScannerOptions {
-    /** Specific selector or locator to include in the scan. */
-    include?: string | Locator;
+    /**
+     * CSS selector to limit the scan to. Must be a string: AxeBuilder only
+     * accepts selector strings, not Playwright Locators.
+     */
+    include?: string;
     /** Alias for include. */
-    box?: string | Locator;
+    box?: string;
 
     /** Whether to log violations to the console. @default true */
     verbose?: boolean;

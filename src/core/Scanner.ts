@@ -39,17 +39,33 @@ function sanitizePageKey(input: string): string {
  * fall back to the globally configured defaults.
  */
 function getReporterOptions(testInfo: TestInfo): ReporterOptions {
-    const entry = testInfo.config.reporter.find(([name]) => REPORTER_ID_PATTERN.test(name));
-    return (entry?.[1] ?? {}) as ReporterOptions;
+    // A reporter entry is normally a [name, options?] tuple, but Playwright also
+    // accepts a bare string (e.g. reporter: 'snap-ally'), so handle both shapes.
+    const reporters = testInfo.config.reporter as ReadonlyArray<string | readonly [string, unknown?]>;
+    const entry = reporters.find((descriptor) => {
+        const name = typeof descriptor === 'string' ? descriptor : descriptor[0];
+        return REPORTER_ID_PATTERN.test(name);
+    });
+    if (!entry || typeof entry === 'string') {
+        return {};
+    }
+    return (entry[1] ?? {}) as ReporterOptions;
 }
 
 function buildAxe(page: Page, options: ScannerOptions): AxeBuilder {
     let builder = new AxeBuilder({ page });
 
-    const target = options.include || options.box;
+    const target: unknown = options.include || options.box;
     if (target) {
-        // AxeBuilder only accepts selector strings; Locators are passed through unchanged.
-        builder = builder.include(target as string);
+        // AxeBuilder.include only accepts selector strings (axe-core SerialFrameSelector),
+        // never a Playwright Locator. Guard JS callers that bypass the type with a clear error.
+        if (typeof target !== 'string') {
+            throw new Error(
+                '[SnapAlly] "include"/"box" must be a CSS selector string; ' +
+                'Playwright Locators are not supported by AxeBuilder.'
+            );
+        }
+        builder = builder.include(target);
     }
     if (options.rules) {
         builder = builder.options({ rules: options.rules });
