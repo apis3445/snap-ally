@@ -616,9 +616,11 @@ function renderAccessibilityReport(injectedData) {
                 const wcag = escapeHtml(v.wcagRule || (v.tags ? v.tags.join(', ') : ''));
                 const safeStepsJson = encodeURIComponent(JSON.stringify(stepsArray));
                 const safeHelpUrl = escapeHtml(v.helpUrl || '');
+                const safePageUrl = escapeHtml(v.pageUrl || data.pageUrl || '');
+                const safePageKeyArg = escapeHtml(v.pageKey || data.pageKey || '');
                 btn.setAttribute(
                     'onclick',
-                    `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}', '${safeStepsJson}', '${safeHelpUrl}', '${escapeHtml(browser)}')`
+                    `event.preventDefault(); event.stopPropagation(); window.generateAdoPayload('${escapeHtml(v.id || 'Unknown ID')}', '${escapeHtml(v.help || 'No Help Provided')}', '${escapeHtml(node.failureSummary || '')}', '${escapeHtml(node.html || '')}', '${impact || 'unknown'}', '${escapeHtml(node.screenshotBase64 || node.screenshot || node.screenshotPath || '')}', '${escapeHtml(videoPath || '')}', '${safeSnippet}', '${wcag}', '${safeStepsJson}', '${safeHelpUrl}', '${escapeHtml(browser)}', '${safePageUrl}', '${safePageKeyArg}')`
                 );
 
                 const failSec = bClone.querySelector('.bug-failure-summary');
@@ -835,7 +837,9 @@ window.generateAdoPayload = function (
     wcag,
     stepsJson,
     helpUrl,
-    browser
+    browser,
+    pageUrl,
+    pageKey
 ) {
     const pat = sessionStorage.getItem('userToken');
     if (!pat && window.bootstrap) {
@@ -851,8 +855,11 @@ window.generateAdoPayload = function (
 
     const rawData = window.snapAllyData || {};
     const data = rawData.data || rawData;
+    // Prefer the page the violation was actually found on; fall back to the test-level page.
+    const bugPageUrl = pageUrl || data.pageUrl || data.pageKey || 'Resource';
+    const bugPageKey = pageKey || pageUrl || data.pageKey || data.pageUrl || 'Unknown URL';
     const currentUrl = document.getElementById('bugUrlPreview');
-    if (currentUrl) currentUrl.textContent = data.pageUrl || data.pageKey || 'Resource';
+    if (currentUrl) currentUrl.textContent = bugPageUrl;
     const browserPreview = document.getElementById('bugBrowserPreview');
     if (browserPreview) browserPreview.textContent = browser || 'Unknown';
 
@@ -947,7 +954,7 @@ window.generateAdoPayload = function (
         if (videoThumbContainer) videoThumbContainer.classList.add('hidden');
     }
 
-    window.currentBugData = { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath, browser };
+    window.currentBugData = { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath, browser, pageKey: bugPageKey };
 
     if (window.bootstrap) {
         const modal = bootstrap.Modal.getOrCreateInstance(
@@ -983,7 +990,7 @@ async function submitFinalBug() {
     const org = data.adoOrganization;
     const proj = data.adoProject;
     const pat = sessionStorage.getItem('userToken');
-    const { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath, browser } = window.currentBugData;
+    const { axeId, wcag, help, stepsHtml, screenshotBase64, videoPath, browser, pageKey } = window.currentBugData;
 
     const title = document.getElementById('bugTitleInput').value;
     const severity = document.getElementById('bugSeverityInput').value;
@@ -1028,7 +1035,7 @@ async function submitFinalBug() {
     ${stepsHtml}
   `;
 
-    const safePageKey = data.pageKey || 'Unknown URL';
+    const safePageKey = pageKey || data.pageKey || 'Unknown URL';
     const priority = severity === 'critical' ? 1 : severity === 'serious' ? 2 : 3;
 
     const payload = [

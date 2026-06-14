@@ -166,15 +166,33 @@ class SnapAllyReporter implements Reporter {
                 const data = (raw && typeof raw === 'object' && 'data' in raw ? (raw as { data: ReportData }).data : raw) as ReportData | null;
                 if (data) parsedData.push(data);
             } catch (err) {
-                console.error(`[SnapAlly] Failed to parse A11y attachment: ${err}. Body was: ${att.body!.toString().substring(0, 100)}`);
+                // Only decode a short prefix — the body can be large (each target carries screenshotBase64).
+                const prefix = att.body!.subarray(0, 100).toString('utf8');
+                console.error(`[SnapAlly] Failed to parse A11y attachment (${att.body!.length} bytes): ${err}. Body starts with: ${prefix}`);
             }
         }
 
-        // Use the first scan for page-level metadata (pageUrl, ADO settings, ...),
-        // but aggregate violations across every scan in the test.
+        // ADO settings are configured globally (options/env), so any scan carries
+        // the same values; use the first for that metadata.
         const actualData = parsedData[0] || null;
-        const violations = parsedData.flatMap((d) => d.a11yErrors || (d as unknown as { violations: Violation[] }).violations || []);
+
+        // Aggregate violations across every scan, preserving the page each was found
+        // on (falling back to the owning scan's URL for payloads from older versions).
+        const violations = parsedData.flatMap((d) => {
+            const scanUrl = d.pageUrl || d.pageKey;
+            const errs = d.a11yErrors || (d as unknown as { violations: Violation[] }).violations || [];
+            return errs.map((v) => ({ ...v, pageUrl: v.pageUrl || scanUrl, pageKey: v.pageKey || d.pageKey }));
+        });
         const a11yErrorCount = violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
+
+        // A single test may scan several pages (e.g. before/after login). Surface
+        // every distinct page instead of attributing all violations to the first.
+        const uniquePageUrls = [...new Set(parsedData.map((d) => d.pageUrl || d.pageKey).filter((u): u is string => !!u))];
+        const resolvedPageUrl = uniquePageUrls.length === 0
+            ? 'Resource'
+            : uniquePageUrls.length === 1
+                ? uniquePageUrls[0]
+                : 'Multiple pages';
 
         const filteredSteps = (() => {
             const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot', 'Scroll into view', 'Bounding box'];
@@ -205,7 +223,8 @@ class SnapAllyReporter implements Reporter {
             adoProject: this.options.ado?.project || actualData?.adoProject,
             adoAreaPath: this.options.ado?.areaPath || actualData?.adoAreaPath,
             timestamp: new Date().toLocaleString(),
-            pageUrl: actualData?.pageUrl || actualData?.pageKey || 'Resource',
+            pageUrl: resolvedPageUrl,
+            pageUrls: uniquePageUrls,
             tags: [], // Extract from test tags if available
             preConditions: [],
             steps: filteredSteps,

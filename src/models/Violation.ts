@@ -11,4 +11,8 @@ export interface Violation {
     guideline: string;
     total: number;
     target: Target[];
+    /** URL of the page that was scanned when this violation was found. */
+    pageUrl?: string;
+    /** Sanitized key of the page that was scanned when this violation was found. */
+    pageKey?: string;
 }
