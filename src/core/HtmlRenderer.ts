@@ -26,22 +26,26 @@ export class HtmlRenderer {
 
         let html = fs.readFileSync(templatePath, 'utf8');
 
-        // Inline CSS
+        // Inline CSS. Use a replacement function so any `$` sequences in the
+        // injected content are inserted literally (a replacement *string* would
+        // interpret `$$`, `$&`, `` $` ``, `$'`, `$n` as special patterns).
         if (fs.existsSync(cssPath)) {
             const css = fs.readFileSync(cssPath, 'utf8');
             html = html.replace(
                 '</head>',
-                `<style>\n${css}\n</style>\n</head>`
+                () => `<style>\n${css}\n</style>\n</head>`
             );
             // Remove the link tag if it exists
             html = html.replace(/<link[^>]*global-report-styles\.css[^>]*>/, '');
         }
 
-        // Inline Data
-        const jsData = `window.snapAllyData = ${JSON.stringify(data)};`;
+        // Inline Data. Escape `</script` so violation HTML/text containing that
+        // sequence can't prematurely close the inlined <script> tag.
+        const jsonData = JSON.stringify(data).replace(/<\/script/gi, '<\\/script');
+        const jsData = `window.snapAllyData = ${jsonData};`;
         html = html.replace(
             '<script src="data.js"></script>',
-            `<script>\n${jsData}\n</script>`
+            () => `<script>\n${jsData}\n</script>`
         );
 
         // Inline main logic
@@ -49,7 +53,7 @@ export class HtmlRenderer {
             const js = fs.readFileSync(jsPath, 'utf8');
             html = html.replace(
                 '<script src="report-app.js"></script>',
-                `<script>\n${js}\n</script>`
+                () => `<script>\n${js}\n</script>`
             );
         }
 
