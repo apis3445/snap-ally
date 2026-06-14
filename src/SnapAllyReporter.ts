@@ -149,23 +149,31 @@ class SnapAllyReporter implements Reporter {
         const screenshotPaths = this.assetsManager.copyScreenshots(result, testFolder);
         const attachments = this.assetsManager.copyAllOtherAttachments(result, testFolder);
 
-        const a11yAttachment = result.attachments.find((a) => a.name === 'A11y');
-        if (!a11yAttachment && this.options.verbose) {
+        // A single test may call scanA11y/checkAccessibility multiple times (e.g.
+        // before and after login), producing one 'A11y' attachment per scan. Read
+        // every 'A11y' attachment and merge their violations so findings from all
+        // scans are reported — not just the first.
+        const a11yAttachments = result.attachments.filter((a) => a.name === 'A11y' && a.body);
+        if (a11yAttachments.length === 0 && this.options.verbose) {
             console.warn(`[SnapAlly] A11y attachment missing for test: ${test.title}. Available: ${result.attachments.map(a => a.name).join(', ')}`);
         }
 
-        let a11yData: unknown = null;
-        if (a11yAttachment && a11yAttachment.body) {
+        const parsedData: ReportData[] = [];
+        for (const att of a11yAttachments) {
             try {
-                a11yData = JSON.parse(a11yAttachment.body.toString());
+                const raw = JSON.parse(att.body!.toString());
+                // Handle cases where the payload is the direct ReportData or wrapped in a data property
+                const data = (raw && typeof raw === 'object' && 'data' in raw ? (raw as { data: ReportData }).data : raw) as ReportData | null;
+                if (data) parsedData.push(data);
             } catch (err) {
-                console.error(`[SnapAlly] Failed to parse A11y attachment: ${err}. Body was: ${a11yAttachment.body.toString().substring(0, 100)}`);
+                console.error(`[SnapAlly] Failed to parse A11y attachment: ${err}. Body was: ${att.body!.toString().substring(0, 100)}`);
             }
         }
 
-        // Handle cases where a11yData might be the direct ReportData or wrapped in a data property
-        const actualData = (a11yData && typeof a11yData === 'object' && 'data' in a11yData ? (a11yData as { data: ReportData }).data : a11yData) as ReportData | null;
-        const violations = actualData?.a11yErrors || (actualData as unknown as { violations: Violation[] })?.violations || [];
+        // Use the first scan for page-level metadata (pageUrl, ADO settings, ...),
+        // but aggregate violations across every scan in the test.
+        const actualData = parsedData[0] || null;
+        const violations = parsedData.flatMap((d) => d.a11yErrors || (d as unknown as { violations: Violation[] }).violations || []);
         const a11yErrorCount = violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
 
         const filteredSteps = (() => {

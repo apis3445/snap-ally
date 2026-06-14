@@ -109,14 +109,22 @@ function renderTestExecutionReport(data) {
     }
 
     // Helper method for array elements
-    const renderList = (array, listId, cardId) => {
+    const renderList = (array, listId, cardId, asHtml = false) => {
         if (array && array.length > 0) {
             document.getElementById(cardId).classList.remove('hidden');
             const list = document.getElementById(listId);
             const tpl = document.getElementById('string-item-template');
             array.forEach((item) => {
                 const clone = tpl.content.cloneNode(true);
-                clone.querySelector('li').textContent = item;
+                const li = clone.querySelector('li');
+                // Exceptions arrive as pre-sanitized HTML from ansiToHtml (entities
+                // already escaped, only known <span> color tags injected), so render
+                // them as HTML to show the colors. Everything else is plain text.
+                if (asHtml) {
+                    li.innerHTML = item;
+                } else {
+                    li.textContent = item;
+                }
                 list.appendChild(clone);
             });
         }
@@ -130,7 +138,7 @@ function renderTestExecutionReport(data) {
     const filteredErrs = (data.errors || []).filter(
         (err) => !err.includes('Accessibility audit failed')
     );
-    renderList(filteredErrs, 'list-exceptions', 'card-exceptions');
+    renderList(filteredErrs, 'list-exceptions', 'card-exceptions', true);
 
     // Normalize to an array of videos
     const videos = Array.isArray(data.videoPath)
