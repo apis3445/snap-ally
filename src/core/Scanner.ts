@@ -222,17 +222,19 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerO
         .filter((annotation) => !EXCLUDED_ANNOTATION_TYPES.has(annotation.type))
         .map((annotation) => annotation.description || '');
 
+    const scannedUrl = page.url();
     const violations: Violation[] = [];
     for (const violation of axeResults.violations) {
         const severityColor = getSeverityColor(violation.impact, customColors);
-        violations.push(
-            await collectViolationEvidence(page, testInfo, visualReporter, violation, severityColor, contextSteps)
-        );
+        const evidence = await collectViolationEvidence(page, testInfo, visualReporter, violation, severityColor, contextSteps);
+        // Stamp the violation with the page it was found on so reports and ADO
+        // bugs stay accurate when a single test scans several pages.
+        violations.push({ ...evidence, pageUrl: scannedUrl, pageKey });
     }
 
     const reportData: ReportData = {
         pageKey,
-        pageUrl: page.url(),
+        pageUrl: scannedUrl,
         accessibilityScore: 0,
         a11yErrors: violations,
         criticalColor: customColors?.critical || DEFAULT_COLORS.critical,

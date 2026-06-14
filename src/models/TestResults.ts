@@ -11,6 +11,8 @@ export interface TestResults {
     description: string;
     status: string;
     pageUrl?: string;
+    /** All distinct pages scanned in the test (one test may scan several pages). */
+    pageUrls?: string[];
     browser: string;
     adoOrganization?: string;
     adoProject?: string;

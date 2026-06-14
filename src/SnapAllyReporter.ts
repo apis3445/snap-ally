@@ -149,24 +149,50 @@ class SnapAllyReporter implements Reporter {
         const screenshotPaths = this.assetsManager.copyScreenshots(result, testFolder);
         const attachments = this.assetsManager.copyAllOtherAttachments(result, testFolder);
 
-        const a11yAttachment = result.attachments.find((a) => a.name === 'A11y');
-        if (!a11yAttachment && this.options.verbose) {
+        // A single test may call scanA11y/checkAccessibility multiple times (e.g.
+        // before and after login), producing one 'A11y' attachment per scan. Read
+        // every 'A11y' attachment and merge their violations so findings from all
+        // scans are reported — not just the first.
+        const a11yAttachments = result.attachments.filter((a) => a.name === 'A11y' && a.body);
+        if (a11yAttachments.length === 0 && this.options.verbose) {
             console.warn(`[SnapAlly] A11y attachment missing for test: ${test.title}. Available: ${result.attachments.map(a => a.name).join(', ')}`);
         }
 
-        let a11yData: unknown = null;
-        if (a11yAttachment && a11yAttachment.body) {
+        const parsedData: ReportData[] = [];
+        for (const att of a11yAttachments) {
             try {
-                a11yData = JSON.parse(a11yAttachment.body.toString());
+                const raw = JSON.parse(att.body!.toString());
+                // Handle cases where the payload is the direct ReportData or wrapped in a data property
+                const data = (raw && typeof raw === 'object' && 'data' in raw ? (raw as { data: ReportData }).data : raw) as ReportData | null;
+                if (data) parsedData.push(data);
             } catch (err) {
-                console.error(`[SnapAlly] Failed to parse A11y attachment: ${err}. Body was: ${a11yAttachment.body.toString().substring(0, 100)}`);
+                // Only decode a short prefix — the body can be large (each target carries screenshotBase64).
+                const prefix = att.body!.subarray(0, 100).toString('utf8');
+                console.error(`[SnapAlly] Failed to parse A11y attachment (${att.body!.length} bytes): ${err}. Body starts with: ${prefix}`);
             }
         }
 
-        // Handle cases where a11yData might be the direct ReportData or wrapped in a data property
-        const actualData = (a11yData && typeof a11yData === 'object' && 'data' in a11yData ? (a11yData as { data: ReportData }).data : a11yData) as ReportData | null;
-        const violations = actualData?.a11yErrors || (actualData as unknown as { violations: Violation[] })?.violations || [];
+        // ADO settings are configured globally (options/env), so any scan carries
+        // the same values; use the first for that metadata.
+        const actualData = parsedData[0] || null;
+
+        // Aggregate violations across every scan, preserving the page each was found
+        // on (falling back to the owning scan's URL for payloads from older versions).
+        const violations = parsedData.flatMap((d) => {
+            const scanUrl = d.pageUrl || d.pageKey;
+            const errs = d.a11yErrors || (d as unknown as { violations: Violation[] }).violations || [];
+            return errs.map((v) => ({ ...v, pageUrl: v.pageUrl || scanUrl, pageKey: v.pageKey || d.pageKey }));
+        });
         const a11yErrorCount = violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
+
+        // A single test may scan several pages (e.g. before/after login). Surface
+        // every distinct page instead of attributing all violations to the first.
+        const uniquePageUrls = [...new Set(parsedData.map((d) => d.pageUrl || d.pageKey).filter((u): u is string => !!u))];
+        const resolvedPageUrl = uniquePageUrls.length === 0
+            ? 'Resource'
+            : uniquePageUrls.length === 1
+                ? uniquePageUrls[0]
+                : 'Multiple pages';
 
         const filteredSteps = (() => {
             const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot', 'Scroll into view', 'Bounding box'];
@@ -197,7 +223,8 @@ class SnapAllyReporter implements Reporter {
             adoProject: this.options.ado?.project || actualData?.adoProject,
             adoAreaPath: this.options.ado?.areaPath || actualData?.adoAreaPath,
             timestamp: new Date().toLocaleString(),
-            pageUrl: actualData?.pageUrl || actualData?.pageKey || 'Resource',
+            pageUrl: resolvedPageUrl,
+            pageUrls: uniquePageUrls,
             tags: [], // Extract from test tags if available
             preConditions: [],
             steps: filteredSteps,
@@ -307,7 +334,14 @@ class SnapAllyReporter implements Reporter {
             bSummary.totalSkipped++;
         }
 
-        const testKey = test.titlePath().join(' > ');
+        // Build a browser-independent key so the same test running on different
+        // browser projects de-duplicates to a single entry in the global summary.
+        // titlePath() starts at the root suite (empty title) followed by the
+        // project (browser) name; drop both so only file/describe/test remain.
+        const projectName = test.parent?.project()?.name;
+        const keySegments = test.titlePath().filter((s) => s.length > 0);
+        if (projectName && keySegments[0] === projectName) keySegments.shift();
+        const testKey = keySegments.join(' > ');
         const violations = result.a11yErrors || (result as unknown as { violations: Violation[] }).violations;
         if (violations && violations.length > 0) {
             const count = result.a11yErrorCount || violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
@@ -321,38 +355,57 @@ class SnapAllyReporter implements Reporter {
 
             bSummary.totalA11yErrorCount += count;
 
+            // A single test can produce multiple violation entries for the same
+            // rule (e.g. one per scan when scanA11y runs more than once). Sum the
+            // occurrences per rule first, then apply the cross-browser de-dup so
+            // repeated rule IDs within a test are counted as additional occurrences
+            // rather than dropped as duplicates.
+            const ruleSums = new Map<string, number>();
+            const ruleMeta = new Map<string, { severity: string; helpUrl?: string; description?: string }>();
             for (const err of violations) {
                 const ruleId = err.id;
                 const occCount = (err.total || err.target?.length || (err as unknown as { nodes?: unknown[] }).nodes?.length || 0);
+                ruleSums.set(ruleId, (ruleSums.get(ruleId) || 0) + occCount);
+                if (!ruleMeta.has(ruleId)) {
+                    ruleMeta.set(ruleId, {
+                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
+                        helpUrl: err.helpUrl,
+                        description: err.description,
+                    });
+                }
+            }
 
-                // Update global wcagErrors (de-duplicated)
+            if (!this.testRuleCounts[testKey]) this.testRuleCounts[testKey] = {};
+
+            for (const [ruleId, summedOccCount] of ruleSums) {
+                const meta = ruleMeta.get(ruleId)!;
+
+                // Update global wcagErrors (de-duplicated: max across browsers)
                 if (!this.executionSummary.wcagErrors[ruleId]) {
                     this.executionSummary.wcagErrors[ruleId] = {
                         count: 0,
-                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
-                        helpUrl: err.helpUrl,
-                        description: err.description,
+                        severity: meta.severity,
+                        helpUrl: meta.helpUrl,
+                        description: meta.description,
                     };
                 }
 
-                if (!this.testRuleCounts[testKey]) this.testRuleCounts[testKey] = {};
                 const prevRuleOccCount = this.testRuleCounts[testKey][ruleId] || 0;
-
-                if (occCount > prevRuleOccCount) {
-                    this.executionSummary.wcagErrors[ruleId].count += (occCount - prevRuleOccCount);
-                    this.testRuleCounts[testKey][ruleId] = occCount;
+                if (summedOccCount > prevRuleOccCount) {
+                    this.executionSummary.wcagErrors[ruleId].count += (summedOccCount - prevRuleOccCount);
+                    this.testRuleCounts[testKey][ruleId] = summedOccCount;
                 }
 
-                // Update browser-specific wcagErrors (per browser, usually naturally unique)
+                // Update browser-specific wcagErrors (per browser sum)
                 if (!bSummary.wcagErrors[ruleId]) {
                     bSummary.wcagErrors[ruleId] = {
                         count: 0,
-                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
-                        helpUrl: err.helpUrl,
-                        description: err.description,
+                        severity: meta.severity,
+                        helpUrl: meta.helpUrl,
+                        description: meta.description,
                     };
                 }
-                bSummary.wcagErrors[ruleId].count += occCount;
+                bSummary.wcagErrors[ruleId].count += summedOccCount;
             }
         }
     }
