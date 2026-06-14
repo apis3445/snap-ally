@@ -1,3 +1,9 @@
+## [1.0.2] - 2026-06-14 [*](https://github.com/apis3445/snap-ally/pull/21)
+
+### Changed
+- Updated Playwright dependencies to 1.60.
+- Improved accessibility scan/report generation robustness and overlay rendering.
+
 ## [1.0.1] - 2026-03-28 [*](https://github.com/apis3445/snap-ally/pull/20)
 
 ### Changed
