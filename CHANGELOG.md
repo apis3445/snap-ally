@@ -1,3 +1,9 @@
+## [1.0.3] - 2026-06-14 [*](https://github.com/apis3445/snap-ally/pull/22)
+
+### Changed
+- Improved accessibility reporting by aggregating results across multiple scans within a single test.
+- Enhanced report UI to render exception output with preserved formatting.
+
 ## [1.0.2] - 2026-06-14 [*](https://github.com/apis3445/snap-ally/pull/21)
 
 ### Changed
