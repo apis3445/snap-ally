@@ -315,7 +315,14 @@ class SnapAllyReporter implements Reporter {
             bSummary.totalSkipped++;
         }
 
-        const testKey = test.titlePath().join(' > ');
+        // Build a browser-independent key so the same test running on different
+        // browser projects de-duplicates to a single entry in the global summary.
+        // titlePath() starts at the root suite (empty title) followed by the
+        // project (browser) name; drop both so only file/describe/test remain.
+        const projectName = test.parent?.project()?.name;
+        const keySegments = test.titlePath().filter((s) => s.length > 0);
+        if (projectName && keySegments[0] === projectName) keySegments.shift();
+        const testKey = keySegments.join(' > ');
         const violations = result.a11yErrors || (result as unknown as { violations: Violation[] }).violations;
         if (violations && violations.length > 0) {
             const count = result.a11yErrorCount || violations.reduce((acc: number, curr: Violation) => acc + (curr.total || curr.target?.length || (curr as unknown as { nodes: unknown[] }).nodes?.length || 0), 0);
@@ -329,38 +336,57 @@ class SnapAllyReporter implements Reporter {
 
             bSummary.totalA11yErrorCount += count;
 
+            // A single test can produce multiple violation entries for the same
+            // rule (e.g. one per scan when scanA11y runs more than once). Sum the
+            // occurrences per rule first, then apply the cross-browser de-dup so
+            // repeated rule IDs within a test are counted as additional occurrences
+            // rather than dropped as duplicates.
+            const ruleSums = new Map<string, number>();
+            const ruleMeta = new Map<string, { severity: string; helpUrl?: string; description?: string }>();
             for (const err of violations) {
                 const ruleId = err.id;
                 const occCount = (err.total || err.target?.length || (err as unknown as { nodes?: unknown[] }).nodes?.length || 0);
+                ruleSums.set(ruleId, (ruleSums.get(ruleId) || 0) + occCount);
+                if (!ruleMeta.has(ruleId)) {
+                    ruleMeta.set(ruleId, {
+                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
+                        helpUrl: err.helpUrl,
+                        description: err.description,
+                    });
+                }
+            }
 
-                // Update global wcagErrors (de-duplicated)
+            if (!this.testRuleCounts[testKey]) this.testRuleCounts[testKey] = {};
+
+            for (const [ruleId, summedOccCount] of ruleSums) {
+                const meta = ruleMeta.get(ruleId)!;
+
+                // Update global wcagErrors (de-duplicated: max across browsers)
                 if (!this.executionSummary.wcagErrors[ruleId]) {
                     this.executionSummary.wcagErrors[ruleId] = {
                         count: 0,
-                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
-                        helpUrl: err.helpUrl,
-                        description: err.description,
+                        severity: meta.severity,
+                        helpUrl: meta.helpUrl,
+                        description: meta.description,
                     };
                 }
 
-                if (!this.testRuleCounts[testKey]) this.testRuleCounts[testKey] = {};
                 const prevRuleOccCount = this.testRuleCounts[testKey][ruleId] || 0;
-
-                if (occCount > prevRuleOccCount) {
-                    this.executionSummary.wcagErrors[ruleId].count += (occCount - prevRuleOccCount);
-                    this.testRuleCounts[testKey][ruleId] = occCount;
+                if (summedOccCount > prevRuleOccCount) {
+                    this.executionSummary.wcagErrors[ruleId].count += (summedOccCount - prevRuleOccCount);
+                    this.testRuleCounts[testKey][ruleId] = summedOccCount;
                 }
 
-                // Update browser-specific wcagErrors (per browser, usually naturally unique)
+                // Update browser-specific wcagErrors (per browser sum)
                 if (!bSummary.wcagErrors[ruleId]) {
                     bSummary.wcagErrors[ruleId] = {
                         count: 0,
-                        severity: err.severity || (err as unknown as { impact?: string }).impact || 'minor',
-                        helpUrl: err.helpUrl,
-                        description: err.description,
+                        severity: meta.severity,
+                        helpUrl: meta.helpUrl,
+                        description: meta.description,
                     };
                 }
-                bSummary.wcagErrors[ruleId].count += occCount;
+                bSummary.wcagErrors[ruleId].count += summedOccCount;
             }
         }
     }
