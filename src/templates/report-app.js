@@ -317,12 +317,14 @@ function renderExecutionSummary(data) {
         const icon = document.getElementById('global-success-icon');
         const title = document.getElementById('global-success-title');
         const desc = document.getElementById('global-success-desc');
+        const badges = document.getElementById('global-success-badges');
 
         if (data.total > 0 && data.totalSkipped === data.total) {
             icon.textContent = 'help';
             title.textContent = 'Not Tested';
             desc.textContent =
                 'All tests were skipped. No accessibility checks were run.';
+            if (badges) badges.classList.add('hidden');
             successCard.style.background = 'linear-gradient(135deg, #475569 0%, #1e293b 100%)';
             successCard.style.boxShadow = '0 20px 50px rgba(30, 41, 59, 0.2)';
         } else if (data.status === 'failed') {
