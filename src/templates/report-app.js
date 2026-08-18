@@ -437,6 +437,10 @@ function renderExecutionSummary(data) {
                 badge.style.display = 'inline-block';
                 badge.textContent = 'Functional Error';
                 badge.style.border = '1px solid #fecdd3';
+            } else if (test.status === 'skipped') {
+                badge.style.display = 'inline-block';
+                badge.textContent = 'Skipped';
+                badge.classList.add('skipped');
             }
 
             tClone.querySelector('.test-dur').textContent = test.duration;

@@ -212,13 +212,10 @@ class SnapAllyReporter implements Reporter {
             description: '', // Could extract from annotations if needed
             status: result.status,
             statusIcon: this.getStatusIcon(result.status),
-            browser: (() => {
-                const bName = (test as unknown as { _projectId?: string })._projectId ||
-                    test.parent?.project()?.name ||
-                    (test as unknown as { projectName?: string }).projectName ||
-                    'chromium';
-                return test.outcome() === 'skipped' ? 'n/a' : bName;
-            })(),
+            browser: (test as unknown as { _projectId?: string })._projectId ||
+                test.parent?.project()?.name ||
+                (test as unknown as { projectName?: string }).projectName ||
+                'chromium',
             adoOrganization: this.options.ado?.organization || actualData?.adoOrganization,
             adoProject: this.options.ado?.project || actualData?.adoProject,
             adoAreaPath: this.options.ado?.areaPath || actualData?.adoAreaPath,

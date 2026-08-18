@@ -5,6 +5,7 @@ test.describe('Page A11y', {
     tag: ['@PageAccessibility'],
 }, () => {
 
+    // eslint-disable-next-line playwright/expect-expect
     test('local accessibility test', async ({ page }, testInfo) => {
         const pageToTest = 'https://www.google.com';
 
