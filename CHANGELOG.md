@@ -1,3 +1,9 @@
+## [1.0.5] - 2026-08-18
+
+### Changed
+- Added a distinct "Not Tested" state (global and per-browser) shown when every test in a group was skipped, instead of incorrectly reporting "Compliant".
+- Fixed the "Not Tested" card's background gradient to meet WCAG AA contrast for its description text.
+
 ## [1.0.4] - 2026-08-18
 
 ### Changed
