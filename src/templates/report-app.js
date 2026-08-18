@@ -317,8 +317,17 @@ function renderExecutionSummary(data) {
         const icon = document.getElementById('global-success-icon');
         const title = document.getElementById('global-success-title');
         const desc = document.getElementById('global-success-desc');
+        const badges = document.getElementById('global-success-badges');
 
-        if (data.status === 'failed') {
+        if (data.total > 0 && data.totalSkipped === data.total) {
+            icon.textContent = 'help';
+            title.textContent = 'Not Tested';
+            desc.textContent =
+                'All tests were skipped. No accessibility checks were run.';
+            if (badges) badges.classList.add('hidden');
+            successCard.style.background = 'linear-gradient(135deg, #475569 0%, #1e293b 100%)';
+            successCard.style.boxShadow = '0 20px 50px rgba(30, 41, 59, 0.2)';
+        } else if (data.status === 'failed') {
             icon.textContent = 'report_off';
             icon.style.color = 'rgba(255,255,255,0.8)';
             title.textContent = 'Accessibility Checks Passed';
@@ -391,8 +400,22 @@ function renderExecutionSummary(data) {
         } else {
             const sucContainer = contentClone.querySelector('.browser-success-container');
             if (sucContainer) sucContainer.classList.remove('hidden');
+            const bIcon = sucContainer.querySelector('.success-hero-icon');
             const bTitle = sucContainer.querySelector('.browser-success-title');
-            if (bTitle) bTitle.textContent = `${capBrowser} Compliant`;
+            const bDesc = sucContainer.querySelector('.success-hero-desc');
+
+            if (bStats.total > 0 && bStats.totalSkipped === bStats.total) {
+                if (bIcon) bIcon.textContent = 'help';
+                if (bTitle) bTitle.textContent = `${capBrowser} Not Tested`;
+                if (bDesc) {
+                    bDesc.textContent =
+                        'All tests were skipped in this browser environment. No accessibility checks were run.';
+                }
+                sucContainer.style.background = 'linear-gradient(135deg, #475569 0%, #1e293b 100%)';
+                sucContainer.style.boxShadow = '0 20px 50px rgba(30, 41, 59, 0.2)';
+            } else {
+                if (bTitle) bTitle.textContent = `${capBrowser} Compliant`;
+            }
         }
 
         contentContainer.appendChild(contentClone);
