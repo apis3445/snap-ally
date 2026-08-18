@@ -1418,6 +1418,12 @@ video {
     white-space: nowrap;
 }
 
+.err-badge.skipped {
+    background: #e0e7ff;
+    color: var(--skipped);
+    border: 1px solid #c7d2fe;
+}
+
 .test-dur {
     font-size: 0.8rem;
     color: var(--text-muted);

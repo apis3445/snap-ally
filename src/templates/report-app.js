@@ -431,12 +431,16 @@ function renderExecutionSummary(data) {
 
             const badge = tClone.querySelector('.err-badge');
             if (test.a11yErrorCount > 0) {
-                badge.style.display = 'inline-block';
+                badge.classList.remove('hidden');
                 badge.textContent = `${test.a11yErrorCount} errors`;
             } else if (test.status === 'failed') {
-                badge.style.display = 'inline-block';
+                badge.classList.remove('hidden');
                 badge.textContent = 'Functional Error';
                 badge.style.border = '1px solid #fecdd3';
+            } else if (test.status === 'skipped') {
+                badge.classList.remove('hidden');
+                badge.textContent = 'Skipped';
+                badge.classList.add('skipped');
             }
 
             tClone.querySelector('.test-dur').textContent = test.duration;

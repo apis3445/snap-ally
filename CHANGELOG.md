@@ -1,3 +1,9 @@
+## [1.0.4] - 2026-08-18
+
+### Changed
+- Fixed skipped tests creating a separate "N/a" browser tab in the summary report; they now group under their actual browser/project.
+- Added a "Skipped" badge in the Test Suite Details list so skipped tests stay visually distinguishable.
+
 ## [1.0.3] - 2026-06-14 [*](https://github.com/apis3445/snap-ally/pull/22)
 
 ### Changed
