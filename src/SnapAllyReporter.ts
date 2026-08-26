@@ -3,6 +3,7 @@ import * as path from 'path';
 import type { FullConfig, Reporter, TestCase, TestResult, FullResult } from '@playwright/test/reporter';
 import { HtmlRenderer } from './core/HtmlRenderer';
 import { ReportAssets } from './core/ReportAssets';
+import { A11Y_SCAN_ATTEMPTED_ANNOTATION } from './core/Scanner';
 import { TimeUtils } from './utils/TimeUtils';
 import {
     TestSummary,
@@ -154,7 +155,11 @@ class SnapAllyReporter implements Reporter {
         // every 'A11y' attachment and merge their violations so findings from all
         // scans are reported — not just the first.
         const a11yAttachments = result.attachments.filter((a) => a.name === 'A11y' && a.body);
-        if (a11yAttachments.length === 0 && this.options.verbose) {
+        // Only tests that actually called scanA11y/checkAccessibility carry this annotation —
+        // warning for every other test would be false-positive noise (see GH issue: warning
+        // fired for tests that never scan for accessibility at all).
+        const scanAttempted = test.annotations.some((a) => a.type === A11Y_SCAN_ATTEMPTED_ANNOTATION);
+        if (scanAttempted && a11yAttachments.length === 0 && this.options.verbose) {
             console.warn(`[SnapAlly] A11y attachment missing for test: ${test.title}. Available: ${result.attachments.map(a => a.name).join(', ')}`);
         }
 

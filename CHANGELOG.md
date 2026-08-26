@@ -1,3 +1,8 @@
+## [1.0.6] - 2026-08-25
+
+### Fixed
+- `SnapAllyReporter` no longer warns "A11y attachment missing" for tests that never call `scanA11y`/`checkAccessibility`. The warning now only fires when a test actually attempted a scan (tracked via an internal annotation) but the `'A11y'` attachment still didn't show up.
+
 ## [1.0.5] - 2026-08-18
 
 ### Changed

@@ -9,7 +9,14 @@ type AxeResults = Awaited<ReturnType<AxeBuilder['analyze']>>;
 type AxeViolation = AxeResults['violations'][number];
 
 /** Annotation types rendered separately in the report, so they must not repeat as context steps. */
-const EXCLUDED_ANNOTATION_TYPES = new Set(['Pre Condition', 'Post Condition', 'Description', 'A11y']);
+const EXCLUDED_ANNOTATION_TYPES = new Set(['Pre Condition', 'Post Condition', 'Description', 'A11y', 'A11yScanAttempted']);
+
+/**
+ * Annotation type stamped on the test the moment a scan starts, so SnapAllyReporter
+ * can tell "this test never called scanA11y" (expected, stay silent) apart from
+ * "this test called scanA11y but the 'A11y' attachment never showed up" (a real failure).
+ */
+export const A11Y_SCAN_ATTEMPTED_ANNOTATION = 'A11yScanAttempted';
 
 /**
  * Matches reporter ids that refer to SnapAllyReporter: the file path used
@@ -196,6 +203,11 @@ async function collectViolationEvidence(
  * 'A11y' attachment consumed by SnapAllyReporter.
  */
 export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerOptions = {}) {
+    // Stamp intent up front, before anything that could throw or early-return,
+    // so the reporter can tell a real failed/missing scan apart from a test
+    // that never called scanA11y in the first place.
+    testInfo.annotations.push({ type: A11Y_SCAN_ATTEMPTED_ANNOTATION });
+
     const globalOptions = getReporterOptions(testInfo);
 
     // Resolve final options (local > global > default)
