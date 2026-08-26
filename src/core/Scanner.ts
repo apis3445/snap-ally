@@ -223,10 +223,13 @@ export async function scanA11y(page: Page, testInfo: TestInfo, options: ScannerO
 
     await logViolations(page, axeResults.violations, showTerminal, showBrowser);
 
-    const violationCount = axeResults.violations.length;
-
     await test.step('Check Accessibility', async () => {
-        expect.soft(violationCount).toBe(0);
+        for (const violation of axeResults.violations) {
+            expect.soft(
+                violation.nodes,
+                `${violation.id} [${violation.impact}] - ${violation.help} (${violation.nodes.length} element(s) affected)`
+            ).toHaveLength(0);
+        }
     });
 
     const visualReporter = new VisualReporter(page);

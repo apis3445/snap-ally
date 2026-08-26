@@ -1,3 +1,9 @@
+## [1.0.7] - 2026-08-26
+
+### Changed
+- `scanA11y`/`checkAccessibility` now records a separate soft assertion per accessibility violation (id, impact, help text, and affected element count) instead of a single assertion on the total violation count, so each issue is individually visible in the test report.
+- Wrapped `VisualReporter.highlightElement` in a `test.step` for clearer step-by-step traceability in Playwright reports.
+
 ## [1.0.6] - 2026-08-25
 
 ### Fixed

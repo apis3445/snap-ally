@@ -68,14 +68,16 @@ export class VisualReporter {
     }
 
     async highlightElement(selector: string, color: string): Promise<void> {
-        const locator = this.page.locator(selector);
-        await locator.scrollIntoViewIfNeeded();
+        await test.step(`Highlight element: ${selector}`, async () => {
+            const locator = this.page.locator(selector);
+            await locator.scrollIntoViewIfNeeded();
 
-        const box = await locator.boundingBox();
-        if (!box) return;
+            const box = await locator.boundingBox();
+            // eslint-disable-next-line playwright/no-conditional-in-test
+            if (!box) return;
 
-        const padding = this.HIGHLIGHT_PADDING;
-        const highlightHtml = `
+            const padding = this.HIGHLIGHT_PADDING;
+            const highlightHtml = `
             <div style="
                 position: fixed;
                 left: ${box.x - padding}px;
@@ -86,7 +88,8 @@ export class VisualReporter {
                 ${VisualReporter.HIGHLIGHT_STYLE}
             "></div>
         `;
-        this.highlightOverlay = await this.page.screencast.showOverlay(highlightHtml);
+            this.highlightOverlay = await this.page.screencast.showOverlay(highlightHtml);
+        });
     }
 
     async cleanupOverlay(): Promise<void> {
