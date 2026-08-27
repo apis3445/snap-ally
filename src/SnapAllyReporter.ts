@@ -200,7 +200,7 @@ class SnapAllyReporter implements Reporter {
                 : 'Multiple pages';
 
         const filteredSteps = (() => {
-            const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot', 'Scroll into view', 'Bounding box'];
+            const blocklist = ['Evaluate', 'Create page', 'Close page', 'Before Hooks', 'After Hooks', 'Worker Teardown', 'Worker Cleanup', 'Attach', 'Wait for timeout', 'Capture A11y screenshot', 'Scroll into view', 'Bounding box', 'Highlight element'];
             const filtered = result.steps
                 .filter((s) => !blocklist.some(b => s.title.includes(b)))
                 .map((s) => s.title);

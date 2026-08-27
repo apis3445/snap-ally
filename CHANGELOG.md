@@ -1,3 +1,9 @@
+## [1.0.8] - 2026-08-26
+
+### Changed
+- Remove highlightElement from test step
+- Wrap wait for timeout step
+
 ## [1.0.7] - 2026-08-26
 
 ### Changed

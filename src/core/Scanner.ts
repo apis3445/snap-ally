@@ -161,9 +161,7 @@ async function collectViolationEvidence(
             }
 
             await visualReporter.highlightElement(elementSelector, severityColor);
-            // Let the highlight transition settle before the screenshot.
-            // eslint-disable-next-line playwright/no-wait-for-timeout
-            await page.waitForTimeout(100);
+            
 
             const screenshotName = `a11y-${violation.id}-${screenshotIndex++}.png`;
             const buffer = await visualReporter.captureScreenshot(testInfo, screenshotName);
