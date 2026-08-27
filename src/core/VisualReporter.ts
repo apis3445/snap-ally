@@ -89,6 +89,10 @@ export class VisualReporter {
             "></div>
         `;
             this.highlightOverlay = await this.page.screencast.showOverlay(highlightHtml);
+
+            // Let the highlight transition settle before the screenshot.
+            // eslint-disable-next-line playwright/no-wait-for-timeout
+            await this.page.waitForTimeout(100);
         });
     }
 
